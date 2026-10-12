@@ -1,8 +1,10 @@
 """Offline structural/security regression tests. No business calculations or network calls."""
 from __future__ import annotations
 import copy
+import base64
 import importlib.util
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -173,6 +175,28 @@ class ReportTests(unittest.TestCase):
         self.assertFalse(v.check_html(self.path)['passed'])
     def test_external_resource_rejected(self):
         text=self.render();self.path.write_text(text.replace('</body>','<img src="https://example.com/x.png"></body>'))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_original_referral_poster_embedded_at_bottom(self):
+        text=self.render();card=re.search(r'<section id="referral"[^>]*>(.*?)</section>\s*</main>',text,re.S)
+        self.assertIsNotNone(card,'每份报告须在正文最底部保留分享卡片')
+        src=re.search(r'<img[^>]*src="([^"]+)"',card.group(1)).group(1)
+        self.assertTrue(src.startswith('data:image/jpeg;base64,'))
+        self.assertEqual(base64.b64decode(src.split(',',1)[1]),(ROOT/'会员体验卡海报.jpg').read_bytes())
+        self.assertIn('https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde',card.group(1))
+        self.assertIn('3天体验',card.group(1))
+        self.assertLess(text.index('id="sources"'),text.index('id="referral"'))
+    def test_missing_referral_card_rejected(self):
+        text=self.render();self.path.write_text(re.sub(r'<section id="referral".*?</section>','',text,flags=re.S))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_substituted_referral_image_rejected(self):
+        text=self.render();self.path.write_text(re.sub(r'(id="referral-poster"[^>]*src=")[^"]+',r'\g<1>data:image/jpeg;base64,/9j/2Q==',text))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_substituted_referral_link_rejected(self):
+        text=self.render();self.path.write_text(text.replace('https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde','https://example.com/other-referral'))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_card_moved_above_report_rejected(self):
+        text=self.render();card=re.search(r'<section id="referral".*?</section>',text,re.S).group()
+        self.path.write_text(text.replace(card,'').replace('<main>','<main>'+card))
         self.assertFalse(v.check_html(self.path)['passed'])
     def test_broken_anchor_rejected(self):
         text=self.render();self.path.write_text(text.replace('href="#overview"','href="#not-there"',1))

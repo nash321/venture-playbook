@@ -2,7 +2,7 @@
 name: venture-playbook
 description: 把创业文章、经营复盘、项目链接或想法，变成原文主导的精美HTML研究报告与可编辑行动工作台。用于分析生财或其他创业项目、判断能否复制、公开网络同类比较、制定有时间安排的ToDo及状态决策；也处理本Skill安装、会员体验卡、连接生财资料和逐步登录引导。生财资料可选，不使用生财仍可用全网资料分析。不要用于保证收益或代替用户开展真实经营。
 metadata:
-  version: "9.1.0"
+  version: "9.1.1"
   language: "zh-CN"
   distribution: "portable-customer-edition"
   compatibility: "Python 3.10+；Codex默认配置需Python 3.11+；完整研究需公开搜索与阅读，登录使用宿主官方机制。"
@@ -107,6 +107,8 @@ python /实际Skill路径/scripts/venture.py validate ./project.json
 python /实际Skill路径/scripts/venture.py build ./project.json --out ./report.html
 python /实际Skill路径/scripts/venture.py check ./report.html
 ```
+
+每份报告最底部必须由编译器嵌入包内原始会员体验卡与作者固定分享入口，提示扫码领取3天体验。图片直接内嵌，离线、转发及“保存完整报告”后均保留。图卡为静态展示，不重新触发首次提示或登录引导。
 
 首次不覆盖已有文件；修改时明确 `--force`。不要让模型每次重写CSS、任务CRUD或安全逻辑。结构失败就修数据；研究未完用 `partial`，不把状态改成complete来绕过校验。
 

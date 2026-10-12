@@ -42,7 +42,7 @@ def main():
             for email in re.findall(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}',text):
                 if not email.endswith(('@example.com','@example.invalid')):findings.append(name+'：包含非示例邮箱')
     if findings:raise ValueError('\n'.join(findings))
-    manifest={'name':'venture-playbook','version':'9.1.0','edition':'portable-customer','sha256':{n:hashlib.sha256(b).hexdigest() for n,b in files.items()},'note':'指纹验证文件完整性，不认证研究真实性、OAuth或跨宿主实装。'}
+    manifest={'name':'venture-playbook','version':'9.1.1','edition':'portable-customer','sha256':{n:hashlib.sha256(b).hexdigest() for n,b in files.items()},'note':'指纹验证文件完整性，不认证研究真实性、OAuth或跨宿主实装。'}
     files['manifest.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
     out.parent.mkdir(parents=True,exist_ok=True)
     mode='w' if a.force else 'x'

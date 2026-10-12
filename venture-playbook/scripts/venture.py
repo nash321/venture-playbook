@@ -18,7 +18,8 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '9.1.0'
+VERSION = '9.1.1'
+REFERRAL_URL = 'https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde'
 STATUSES = {'todo':'待开始','doing':'进行中','done':'已完成','blocked':'受阻'}
 PRIORITIES = {'high':'优先','normal':'正常','low':'稍后'}
 RESEARCH = {'draft':'草稿','partial':'仍有待核内容','source_only':'仅基于提供材料','complete':'研究完成 · 不代表收益验证','demo':'演示样稿 · 非真实经营结果'}
@@ -259,6 +260,14 @@ def dialogs():
     return '<dialog id="task-dialog" class="dialog" aria-labelledby="editor-title"><form id="task-form"><header class="dialog-head"><h2 id="editor-title">编辑行动</h2><button type="button" class="btn quiet small" id="editor-close" aria-label="关闭编辑">关闭</button></header><div class="dialog-body"><p id="editing-id" class="small-copy"></p><div class="fields">'+fields+'</div><datalist id="phase-options"></datalist><p id="form-error" class="form-error" role="alert"></p></div><footer class="dialog-footer"><span class="small-copy">只改行动，不改研究原文。</span><div class="btn-group"><button type="button" class="btn" id="editor-cancel">取消</button><button type="submit" class="btn primary">保存行动</button></div></footer></form></dialog><dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title"><header class="dialog-head"><h2 id="confirm-title">确认操作</h2></header><div class="dialog-body"><p id="confirm-message"></p></div><footer class="dialog-footer"><div class="btn-group"><button type="button" class="btn" id="confirm-no">取消</button><button type="button" class="btn danger" id="confirm-yes">确认</button></div></footer></dialog><div id="toast" class="toast" role="status" aria-live="polite" hidden><span id="toast-text"></span><button id="toast-undo" type="button" hidden>撤销</button></div>'
 
 
+def poster_uri():
+    return 'data:image/jpeg;base64,'+base64.b64encode((ROOT/'会员体验卡海报.jpg').read_bytes()).decode('ascii')
+
+
+def referral_card():
+    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><h2 id="referral-title">让AI陪你拆解更多赚钱项目</h2><p>想看看真实项目怎么起步、获客和交付？扫描下方会员体验卡二维码，领取生财有术<strong>3天体验</strong>。</p><a id="referral-link" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer" aria-label="打开作者的生财有术分享入口"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="lazy"></a><p class="small-copy">注册后可连接生财资料，让AI读取你有权访问的文章，结合全网信息分析项目并制定行动计划。暂不加入，也可以继续用全网资料研究。</p><p class="small-copy">这是作者的分享入口，作者可能获得推荐奖励；实际体验和阅读权益以生财账号为准。</p></section>'
+
+
 def render(data):
     d=validate_data(data)
     css=(ROOT/'assets/report.css').read_text('utf-8');js=(ROOT/'assets/tasks.js').read_text('utf-8')
@@ -322,13 +331,13 @@ def render(data):
         link=f'<a href="{esc(safe_url(s.get("url","")))}" target="_blank" rel="noopener noreferrer">{esc(s["title"])}</a>' if s.get('url') else '<strong>'+esc(s['title'])+'</strong>'
         doc.append('<div class="source-item" id="ref-'+esc(s['id'])+'"><span class="ref-id">'+esc(s['id'])+'</span><div>'+link+p('来源：'+s.get('publisher','提供材料')+' · 阅读：'+s.get('read_status','not_read')+' · 读取日：'+s.get('accessed_on','未记录'))+p(s.get('supports',''))+p(s.get('limitations',''))+'</div></div>')
     if d.get('limitations'): doc.append('<div class="sources-note"><h4>仍需补证</h4>'+ul(d['limitations'])+'</div>')
-    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer></main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
+    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer>'+referral_card()+'</main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
     return ''.join(doc)
 
 
 class Inventory(HTMLParser):
     def __init__(self):
-        super().__init__(convert_charrefs=True);self.ids=[];self.links=[];self.errors=[];self.tags=set();self.script_id='';self.scripts={};self.metas={};self.lang='';self.styles=[];self.in_style=False
+        super().__init__(convert_charrefs=True);self.ids=[];self.links=[];self.errors=[];self.tags=set();self.script_id='';self.scripts={};self.metas={};self.lang='';self.styles=[];self.in_style=False;self.referral_image={};self.referral_link={}
     def handle_starttag(self,tag,attributes):
         a=dict(attributes);self.tags.add(tag)
         if a.get('id'): self.ids.append(a['id'])
@@ -344,6 +353,8 @@ class Inventory(HTMLParser):
             value=a.get(key,'').strip()
             if re.match(r'(?i)javascript:|vbscript:',value):self.errors.append('含脚本网址。')
         if tag=='a':self.links.append(a.get('href',''))
+        if tag=='a' and a.get('id')=='referral-link':self.referral_link=a
+        if tag=='img' and a.get('id')=='referral-poster':self.referral_image=a
         if tag=='link':self.errors.append('页面不应依赖外部样式或字体。')
         if tag=='script':
             self.script_id=a.get('id','')
@@ -366,6 +377,9 @@ def check_html(path):
     if not {'html','head','body','h1','style'}.issubset(inv.tags):errors.append('页面结构不完整。')
     if inv.metas.get('charset','').lower()!='utf-8' or not inv.lang.startswith('zh') or 'viewport' not in inv.metas:errors.append('缺少中文、UTF-8或移动端声明。')
     if len(inv.ids)!=len(set(inv.ids)):errors.append('DOM编号重复。')
+    if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
+    if inv.referral_link.get('href')!=REFERRAL_URL:errors.append('缺少作者固定分享入口或链接已被替换。')
+    if not re.search(r'<section\b[^>]*id="referral"[^>]*>.*?</section>\s*</main>',text,re.S):errors.append('分享图卡必须位于正文最底部。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)
     if inv.scripts.get('vp-runtime','')!=(ROOT/'assets/tasks.js').read_text('utf-8'):errors.append('交互脚本与受信任内置版本不一致。')
