@@ -1,0 +1,4 @@
+interface:
+  display_name: "项目研判与行动指南"
+  short_description: "原文精读、公开同类研究与可编辑HTML行动工作台"
+  default_prompt: "使用 $venture-playbook 分析我提供的创业项目，生成完整研究报告和可编辑行动指南。"
