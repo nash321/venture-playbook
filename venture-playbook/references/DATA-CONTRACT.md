@@ -37,7 +37,7 @@ cases必需：id、name、entity_id、relationship（direct/adjacent/counter）�
 
 ## 命令
 
-`doctor`：检查本地Python和模板，无网络测试。
+`doctor`：检查本地Python、模板和必需的原海报；缺依赖返回非零及missing_assets，无网络测试。
 
 `init --title 标题 --out project.json`：生成草稿骨架，不生成伪研究。
 
@@ -55,7 +55,7 @@ cases必需：id、name、entity_id、relationship（direct/adjacent/counter）�
 
 `export-tasks project.json --out tasks.csv`：导出全部任务，防表格公式注入。
 
-`merge-tasks project.json --tasks backup.json --out project-updated.json`：导入客户备份，保留主文；项目不匹配则拒绝。再用build生成新版报告。
+`merge-tasks project.json --tasks backup.json（或saved-report.html） --out project-updated.json`：导入客户JSON备份或保存HTML内的vp-data，保留主文；项目不匹配则拒绝。再用build生成新版报告。
 
 所有写命令默认拒绝覆盖已有文件。明确允许时加--force，但不能把输出路径设为原始输入文件。错误会退出并说明原因，不留下半份冒充成功的文件。
 

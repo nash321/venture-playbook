@@ -418,6 +418,19 @@ class TextExtractor(HTMLParser):
         if not self.skip:self.parts.append(text)
 
 
+def read_task_backup(path):
+    if path.suffix.lower() not in {'.html','.htm'}:data=read_json(path)
+    else:
+        if not path.is_file():raise InputError('未找到保存的HTML：'+str(path))
+        if path.stat().st_size>MAX_JSON*8:raise InputError('保存的HTML过大，请改用待办JSON备份。')
+        inv=Inventory();inv.feed(path.read_text('utf-8-sig'))
+        if inv.ids.count('vp-data')!=1:raise InputError('HTML缺少唯一的待办数据，请使用保存完整报告所得文件。')
+        try:data=json.loads(inv.scripts.get('vp-data',''))
+        except ValueError as exc:raise InputError('HTML内待办JSON损坏，未合入。') from exc
+    if not isinstance(data,dict):raise InputError('待办备份必须是对象。')
+    return data
+
+
 def outline(path):
     if path.stat().st_size>MAX_JSON:raise InputError('原始材料超过8MB，请按章节拆分。')
     if path.suffix.lower() not in {'.txt','.md','.markdown','.html','.htm'}:raise InputError('outline只处理UTF-8文字或HTML；文档/图片需由宿主读取。')
@@ -483,7 +496,9 @@ def main(argv=None):
     args=parser.parse_args(argv)
     try:
         if args.cmd=='doctor':
-            print(json.dumps({'python_supported':sys.version_info>=(3,10),'python':sys.version.split()[0],'assets_present':all((ROOT/'assets'/x).is_file() for x in ['report.css','tasks.js','brand.json']),'core_dependencies':'Python standard library only','search':'由宿主提供；本脚本未测试联网','browser':'HTML交互需现代浏览器；本命令未验证实显'},ensure_ascii=False,indent=2));return 0
+            required=['assets/report.css','assets/tasks.js','assets/brand.json','会员体验卡海报.jpg']
+            missing=[x for x in required if not (ROOT/x).is_file()]
+            print(json.dumps({'python_supported':sys.version_info>=(3,10),'python':sys.version.split()[0],'assets_present':not missing,'missing_assets':missing,'core_dependencies':'Python standard library only','search':'由宿主提供；本脚本未测试联网','browser':'HTML交互需现代浏览器；本命令未验证实显'},ensure_ascii=False,indent=2));return 2 if missing or sys.version_info<(3,10) else 0
         if args.cmd=='init':value=scaffold(args.title);content=json.dumps(value,ensure_ascii=False,indent=2)
         elif args.cmd=='build':content=render(read_json(args.input))
         elif args.cmd=='validate':
@@ -495,7 +510,8 @@ def main(argv=None):
         elif args.cmd=='dedupe':content=json.dumps(dedupe(read_json(args.input)),ensure_ascii=False,indent=2)
         elif args.cmd=='export-tasks':content=export_tasks(read_json(args.input))
         elif args.cmd=='merge-tasks':
-            data=read_json(args.input);backup=read_json(args.tasks)
+            if args.out.resolve()==args.tasks.resolve():raise InputError('输出不能覆盖待办备份或保存的HTML；请指定新文件。')
+            data=read_json(args.input);backup=read_task_backup(args.tasks)
             if backup.get('schema_version')!=1 or backup.get('report_id')!=data.get('report_id'):raise InputError('备份不属于该项目，未合入。')
             data['tasks']=validate_tasks(backup.get('tasks'));data['selected_state']=backup.get('selected_state','');data.pop('revision',None);validate_data(data);content=json.dumps(data,ensure_ascii=False,indent=2)
         if hasattr(args,'input') and args.out.resolve()==args.input.resolve():raise InputError('输出不能覆盖原始输入；请指定新文件。')

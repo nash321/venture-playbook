@@ -2,7 +2,15 @@
 
 同一项目保持report_id，修订不复制私有全局配置，不重建无关研究。先定位用户需要改的是事实、表达、结构还是行动。只补对应证据，不为改一个按钮重新扫描全网。
 
-客户已改待办时，先请其提供备份JSON或“保存完整报告”后的文件。使用merge-tasks导入到新project.json，默认不覆盖原文件。主报告正文和来源保持独立，不能把任务备注当作研究事实。
+客户已改待办时，先请其提供备份JSON或“保存完整报告”后的文件。已有同项目project.json时，使用现有merge-tasks导入JSON备份或保存的HTML到新project.json，默认不覆盖原文件。HTML只提取vp-data中的当前待办及所选状态，绝不执行其中脚本或将报告备注当正文；校验项目编号、任务结构及状态后再生成。
+
+```sh
+python <Skill>/scripts/venture.py merge-tasks ./project.json --tasks ./saved-report.html --out ./project-updated.json
+python <Skill>/scripts/venture.py build ./project-updated.json --out ./report-updated.html
+python <Skill>/scripts/venture.py check ./report-updated.html
+```
+
+只有HTML且找不到原project.json时，保留原HTML和待办数据；先定位原项目数据，无法取得则明确缺口，不用空骨架覆盖正文。客户仍可在原HTML编辑并保存。主报告正文和来源保持独立，不能把任务备注当作研究事实。
 
 生成中断：先检查当前project.json和已有HTML，恢复已完成章节。不要声称临时文件仍然存在；原文没读完标partial。事实已完成但渲染失败只修渲染，不重新写一篇风格不同的替代文章。
 

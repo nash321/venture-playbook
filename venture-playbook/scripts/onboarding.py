@@ -26,7 +26,9 @@ def load(host, home):
     if not path.exists(): return {'prompt_seen':False,'choice':None,'stage':'intro','authentication':'unknown'}
     data=json.loads(path.read_text())
     stages={'intro','scan','register','login','open_auth','sign_in','authorize','verify','done'}
-    if not isinstance(data,dict) or not isinstance(data.get('prompt_seen'),bool) or data.get('stage') not in stages or data.get('authentication') not in ('unknown','verified'):
+    if not isinstance(data,dict) or not isinstance(data.get('prompt_seen'),bool) or not isinstance(data.get('stage'),str) or data.get('stage') not in stages or data.get('authentication') not in ('unknown','verified') or data.get('choice') not in (None,'register','connect','skip'):
+        raise ValueError('invalid_state')
+    if 'resume_stage' in data and (not isinstance(data['resume_stage'],str) or data['resume_stage'] not in stages):
         raise ValueError('invalid_state')
     return data
 

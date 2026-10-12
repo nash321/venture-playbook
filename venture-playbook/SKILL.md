@@ -22,16 +22,28 @@ metadata:
 
 ## SOP 决策树
 
-`S0 识别宿主 → S1 后台全局安装与MCP配置 → S2 读取用户选择 → S3 首次介绍/图卡 → G1 一步一问注册与登录 → R0 原文+全网研究`
+`S0 识别宿主 → S1 后台全局安装与MCP配置 → S2 读取用户选择`
+
+`S0 非六类本地宿主 → 按COMPATIBILITY的官方平台入口接入或直接R0，不套用安装/状态脚本`
+
+`S2 未提示 → S3 首次介绍/图卡；选择注册/连接 → G1；跳过/未答复 → R0`
+
+`S2 已有选择 → R0；本轮明确回应引导或主动恢复 → G1；G1 可读/跳过 → R0`
+
+`R0 原文+全网研究 → C1 编译报告 → E0 验收交付；失败只返回对应节点修复`
 
 ## SOP 节点说明
 
-- `S0`：从当前宿主上下文确定 `codex / claude / cursor / windsurf / gemini / opencode`。不凭其他已安装工具判断当前宿主；不能可靠识别时只问一次正在用什么工具。
-- `S1`：解析本Skill绝对路径，后台运行 `python <Skill>/scripts/setup.py --harness <宿主> --install-skill --report <当前项目>/temp/setup-receipt.json`。默认无控制台输出，不联网、不启动登录、不下载依赖；无论客户有无生财账号都配置MCP，Skill首次安装到宿主用户级全局目录。只消费回执，不给客户展示安装命令或日志。已有正确连接直接复用，保留其他配置与凭据。路径、JSONC、托管策略或写权限不满足时，按 [COMPATIBILITY.md](references/COMPATIBILITY.md) 报具体缺口，不能假称成功。
-- `S2`：读取 `onboarding.py status --harness <宿主>`。用户记录在宿主用户级目录，升级不清空，不写入共享Skill。已有选择直接进入R0；用户明确“继续引导”时用 `resume`，明确“我注册好了/连接生财”时用 `choose connect` 检查当前连接。当前已有有效生财连接就复用，不重复授权；历史核验记录不代表当前可读。
-- `S3`：仅 `show_intro=true` 时读 [ONBOARDING.md](references/ONBOARDING.md)，展示其介绍及 `poster_path` 指向的**原始会员体验卡海报**，提示扫描卡片二维码、领取**3天体验**。客户只选“领取会员体验卡 / 连接生财资料 / 直接分析项目”。用 `choose` 立即记录选择；图卡只使用包内原图与固定分享入口，不能换成别人的注册链接。没有答复时结束本次提示，不在后续主动反复营销。
+- `S0`：从当前宿主上下文确定 `codex / claude / cursor / windsurf / gemini / opencode`。不凭其他已安装工具判断当前宿主；已知为ChatGPT网页、Claude云端等其他宿主时，读 [COMPATIBILITY.md](references/COMPATIBILITY.md)，转平台官方接入或R0，不调用六类本地安装/状态脚本，也不声称全局安装或持久记录成功。身份确实不明时才问一次正在用什么工具。
+- `S1`：先复用本机已安装且符合版本要求的Python绝对路径（报告3.10+，Codex配置3.11+；不自行下载依赖）；再解析本Skill绝对路径，后台运行 `python <Skill>/scripts/setup.py --harness <宿主> --install-skill --report <当前项目>/temp/setup-receipt.json`。默认无控制台输出，不联网、不启动登录、不下载依赖；无论客户有无生财账号都配置MCP，Skill首次安装到宿主用户级全局目录。只消费回执，不给客户展示安装命令或日志。已有正确连接直接复用，保留其他配置与凭据。路径、JSONC、托管策略或写权限不满足时，按 [COMPATIBILITY.md](references/COMPATIBILITY.md) 报具体缺口，不能假称成功。
+- `S2`：读取 `onboarding.py status --harness <宿主>`。用户记录在宿主用户级目录，升级不清空，不写入共享Skill。已有选择且本轮未回应引导时直接进入R0；本轮明确回复上一引导动作则按G1继续当前步骤，不重新介绍。用户明确“继续引导”时用 `resume`，明确“我注册好了/连接生财”时用 `choose connect` 检查当前连接。当前已有有效生财连接就复用，不重复授权；历史核验记录不代表当前可读。
+- `S3`：仅 `show_intro=true` 时读 [ONBOARDING.md](references/ONBOARDING.md)，展示其介绍及 `poster_path` 指向的**原始会员体验卡海报**，提示扫描卡片二维码、领取**3天体验**。客户只选“领取会员体验卡 / 连接生财资料 / 直接分析项目”。用 `choose` 立即记录选择；图卡只使用包内原图与固定分享入口，不能换成别人的注册链接。没有答复时用 `choose skip` 记录后进入R0，不在后续主动反复营销。
 - `G1`：读 [ONBOARDING.md](references/ONBOARDING.md) 的登录节点，脚本 `step` 每次只返回一个客户动作。**一次只给一个步骤，等待客户完成或说明卡点后再 `advance`**；不能一次贴完整教程。客户注册完成后自动衔接登录。脚本的配置成功或客户说“已授权”都不等于实际可读：用一个真实只读生财工具检查后才登记 `verified`。中途跳过即记录并继续R0，后续仅客户主动提起时恢复。
-- `R0`：已授权时按本项目关键词检索生财文章、阅读账号权限内正文，再结合公开网络比较；未授权时仍自动用公开网络找相关项目参考。无联网能力则按原有 `source_only` 边界，不虚构。安装不触发真实注册、付款、授权或社区写操作。
+- `R0`：先按研究起手确认条件，再执行下文A—E的原文读取、公开比较、判断和行动计划；已授权用本人权限内生财正文加全网，未授权或跳过只用全网；无网络且主体原文已有则标 `source_only`，原文不足则标 `partial` 并补必要材料。历史核验不替代本会话只读检查，安装不触发注册、付款或社区写操作。
+- `C1`：复用本轮doctor成功回执，执行F的 `validate → build → check`，使用内置模板、原图页底和可信交互；依赖/数据/渲染失败分别只修对应项。修订先按 [UPDATE-AND-RECOVERY.md](references/UPDATE-AND-RECOVERY.md) 保留客户待办，不能覆盖原始输入。
+- `E0`：按 [HTML-UX.md](references/HTML-UX.md) 实测显示、待办编辑和保存重开，再执行G交付真实HTML路径；无法浏览器实测则明确只通过结构检查，失败不称已验收。
+
+配置或状态写入失败时保留原文件，报告具体缺口；不用生财的研究仍进入R0。不能持久记忆时只说明当前限制，不重复发起营销或谎报安装/登录成功。
 
 安装只写无凭据的公共端点。原生OAuth、必要的客户信任动作及重启按官方机制逐步引导，不修改审批/信任记录，不绕过宿主权限。具体支持范围与官方来源见 [COMPATIBILITY.md](references/COMPATIBILITY.md)。
 
@@ -54,7 +66,7 @@ metadata:
 | HTML、交互、数据保存与验收 | [HTML-UX.md](references/HTML-UX.md) |
 | 修改旧报告、恢复客户待办 | [UPDATE-AND-RECOVERY.md](references/UPDATE-AND-RECOVERY.md) |
 
-首次生成至少读前四项和数据格式；复用已有报告时只读相关模块。不要把CSS、JS、测试和历史样稿全文塞进上下文。
+首次生成至少读前四项、数据格式及HTML验收说明；复用已有报告时只读相关模块。不要把CSS、JS、测试和历史样稿全文塞进上下文。
 
 ## 默认执行流程
 

@@ -8,6 +8,9 @@ import re
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from contextlib import redirect_stdout
+import io
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('venture',ROOT/'scripts/venture.py')
@@ -108,6 +111,40 @@ class InputTests(unittest.TestCase):
         a=self.root/'project.json';b=self.root/'backup.json';a.write_text(json.dumps(fixture()));b.write_text(json.dumps({'report_id':'wrong','schema_version':1,'tasks':[]}))
         self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(self.root/'out.json')]),2)
         self.assertFalse((self.root/'out.json').exists())
+    def test_merge_saved_html_keeps_edits_state_and_research(self):
+        original=fixture();saved=copy.deepcopy(original)
+        saved['tasks'][0]['notes']='用户保存的修改';saved['selected_state']=saved['states'][0]['id']
+        a=self.root/'project.json';b=self.root/'saved.html';out=self.root/'updated.json'
+        a.write_text(json.dumps(original));b.write_text(v.render(saved))
+        self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(out)]),0)
+        merged=v.read_json(out)
+        self.assertEqual(merged['tasks'][0]['notes'],'用户保存的修改')
+        self.assertEqual(merged['selected_state'],saved['selected_state'])
+        self.assertEqual(merged['source_sections'],original['source_sections'])
+        self.assertEqual(a.read_text(),json.dumps(original))
+    def test_merge_html_wrong_project_does_not_write(self):
+        a=self.root/'project.json';b=self.root/'saved.html';out=self.root/'updated.json'
+        a.write_text(json.dumps(fixture()));other=fixture();other['report_id']='other-project';b.write_text(v.render(other))
+        self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(out)]),2)
+        self.assertFalse(out.exists())
+    def test_merge_html_missing_or_duplicate_payload_rejected(self):
+        a=self.root/'project.json';b=self.root/'saved.html';out=self.root/'updated.json';a.write_text(json.dumps(fixture()))
+        for text in ['<html><body>普通文章</body></html>',v.render(fixture()).replace('</body>','<script id="vp-data" type="application/json">{}</script></body>')]:
+            b.write_text(text)
+            self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(out)]),2)
+            self.assertFalse(out.exists())
+    def test_merge_never_overwrites_saved_html(self):
+        a=self.root/'project.json';b=self.root/'saved.html';a.write_text(json.dumps(fixture()));b.write_text(v.render(fixture()));before=b.read_bytes()
+        self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(b),'--force']),2)
+        self.assertEqual(b.read_bytes(),before)
+    def test_doctor_missing_poster_fails_with_specific_gap(self):
+        for name in ['report.css','tasks.js','brand.json']:
+            p=self.root/'assets'/name;p.parent.mkdir(exist_ok=True);p.write_text('fixture')
+        output=io.StringIO()
+        with patch.object(v,'ROOT',self.root),redirect_stdout(output):code=v.main(['doctor'])
+        self.assertEqual(code,2)
+        receipt=json.loads(output.getvalue());self.assertFalse(receipt['assets_present'])
+        self.assertEqual(receipt['missing_assets'],['会员体验卡海报.jpg'])
 
 
 class TasksTests(unittest.TestCase):

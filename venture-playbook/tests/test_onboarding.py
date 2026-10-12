@@ -171,6 +171,14 @@ class GuideTests(unittest.TestCase):
         path=setup.state_dir(self.home,'codex')/'choice.json';path.parent.mkdir(parents=True)
         path.write_text('{}')
         with self.assertRaises(ValueError):guide.status('codex',self.home)
+    def test_invalid_choice_or_resume_stage_is_explicit_error(self):
+        guide.choose('codex',self.home,'skip')
+        original=guide.load('codex',self.home)
+        path=setup.state_dir(self.home,'codex')/'choice.json'
+        for key,value in [('choice','unknown-choice'),('resume_stage','unknown-step'),('resume_stage',[])]:
+            with self.subTest(key=key,value=value):
+                path.write_text(json.dumps({**original,key:value}))
+                with self.assertRaisesRegex(ValueError,'invalid_state'):guide.status('codex',self.home)
     def test_qr_asset_exists(self):
         self.assertTrue(ROOT.joinpath('会员体验卡海报.jpg').is_file())
 
