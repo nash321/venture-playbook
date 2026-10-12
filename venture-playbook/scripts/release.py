@@ -14,11 +14,12 @@ ALLOW={
 'SKILL.md','README.md','START-HERE.html','USAGE.md','CHANGELOG.md','RELEASE-NOTES.md',
 'agents/openai.yaml','assets/brand.json','assets/report.css','assets/tasks.js',
 'scripts/venture.py','scripts/release.py',
+'scripts/setup.py','scripts/onboarding.py','会员体验卡海报.jpg',
 'references/SOURCE-READING.md','references/WEB-RESEARCH.md','references/BUSINESS-REVIEW.md',
 'references/ACTION-PLAN.md','references/HTML-UX.md','references/UPDATE-AND-RECOVERY.md',
-'references/DATA-CONTRACT.md','references/COMPATIBILITY.md',
+'references/DATA-CONTRACT.md','references/COMPATIBILITY.md','references/ONBOARDING.md',
 'examples/README.md','examples/source-demo.md','examples/project-demo.json','examples/demo-report.html',
-'tests/test_venture.py','tests/browser_smoke.py','tests/storage_mock.py'
+'tests/test_venture.py','tests/browser_smoke.py','tests/storage_mock.py','tests/test_onboarding.py'
 }
 
 def main():
@@ -30,20 +31,24 @@ def main():
     for name in sorted(ALLOW):
         path=ROOT/name
         if not path.is_file() or path.is_symlink():raise ValueError('缺少正式文件或包含符号链接：'+name)
-        data=path.read_bytes();text=data.decode('utf-8');files[name]=data
+        data=path.read_bytes();files[name]=data
+        if name=='会员体验卡海报.jpg':
+            if not data.startswith(b'\xff\xd8') or not data.endswith(b'\xff\xd9'):raise ValueError('会员体验卡不是完整JPEG')
+            continue
+        text=data.decode('utf-8')
         if name!='scripts/release.py':
             for rx in [r'/mnt/data/',r'https://(?:docs|drive|mail)\.google\.com/',r'BEGIN (?:RSA |EC )?PRIVATE KEY',r'(?i)(?:sk-|ghp_)[A-Za-z0-9]{20,}',r'FREQ=HOURLY']:
                 if re.search(rx,text):findings.append(name+'：检测到不应分发的配置或凭据模式')
             for email in re.findall(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}',text):
                 if not email.endswith(('@example.com','@example.invalid')):findings.append(name+'：包含非示例邮箱')
     if findings:raise ValueError('\n'.join(findings))
-    manifest={'name':'venture-playbook','version':'9.0.0','edition':'portable-customer','sha256':{n:hashlib.sha256(b).hexdigest() for n,b in files.items()},'note':'指纹验证文件完整性，不认证研究真实性或跨宿主兼容。'}
+    manifest={'name':'venture-playbook','version':'9.1.0','edition':'portable-customer','sha256':{n:hashlib.sha256(b).hexdigest() for n,b in files.items()},'note':'指纹验证文件完整性，不认证研究真实性、OAuth或跨宿主实装。'}
     files['manifest.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
     out.parent.mkdir(parents=True,exist_ok=True)
     mode='w' if a.force else 'x'
     with zipfile.ZipFile(out,mode,zipfile.ZIP_DEFLATED,compresslevel=9) as z:
         for name,data in sorted(files.items()):
-            info=zipfile.ZipInfo('venture-playbook/'+name,date_time=(2026,10,12,0,0,0))
+            info=zipfile.ZipInfo('venture-playbook/'+name,date_time=(2026,10,13,0,0,0))
             info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16
             z.writestr(info,data)
     with zipfile.ZipFile(out) as z:

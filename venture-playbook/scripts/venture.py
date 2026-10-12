@@ -18,7 +18,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '9.0.0'
+VERSION = '9.1.0'
 STATUSES = {'todo':'待开始','doing':'进行中','done':'已完成','blocked':'受阻'}
 PRIORITIES = {'high':'优先','normal':'正常','low':'稍后'}
 RESEARCH = {'draft':'草稿','partial':'仍有待核内容','source_only':'仅基于提供材料','complete':'研究完成 · 不代表收益验证','demo':'演示样稿 · 非真实经营结果'}

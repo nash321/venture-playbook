@@ -1,16 +1,16 @@
-# 项目研判 · Venture Playbook V9
+# 项目研判 · Venture Playbook V9.1
 
 把一篇创业复盘，变成看得懂、查得到、改得动、做得下去的报告。
 
-**先打开 `START-HERE.html`。** 客户不需要读代码，也不需要额外注册账号。示例在 `examples/demo-report.html`，可直接体验待办增删改查与保存。
+**先打开 `START-HERE.html`。** 客户不需要读代码。可通过作者的会员体验卡领取3天体验、连接生财资料，也可以跳过，直接用全网资料分析。示例在 `examples/demo-report.html`，可体验待办增删改查与保存。
 
 ## 安装与一句话调用
 
-把整个 `venture-playbook` 文件夹放到宿主支持的Skill目录，或让Agent明确读取其中的 `SKILL.md`。不要只复制SKILL.md，前端与脚本也属于交付的一部分。
+把整个文件夹交给Agent，并说“安装并使用 venture-playbook”。Agent后台运行包内安装脚本，默认安装到对应宿主的**全局Skill目录**并配置生财MCP；客户不需要复制命令或操作配置。登录另行选择，不使用生财也可全网分析。手动安装须保留整个文件夹。
 
-- Codex本地项目：`.agents/skills/venture-playbook/`。
-- Claude Code本地项目：`.claude/skills/venture-playbook/`。
-- 其他能读目录、运行Python并输出文件的Agent：显式读取 `venture-playbook/SKILL.md`。
+- 默认适配：Codex、Claude Code、Cursor、Windsurf/Devin、Gemini CLI、OpenCode。
+- 安装脚本静默、离线、可重复运行，保留已有MCP与用户选择；登录时采用官方OAuth。
+- 注册与登录使用引导模式，一次一个步骤；首次显示原图并提示扫码领取3天体验，跳过后不再主动提醒。
 
 安装路径的官方依据及已测边界见 [COMPATIBILITY.md](references/COMPATIBILITY.md)。这不是“所有平台均已实测”的声明。
 
@@ -21,6 +21,8 @@
 ## 需要什么
 
 生成器需要 Python 3.10+；不需要安装pip包。完整公开研究需要宿主提供网页搜索与阅读能力。交互报告需要现代桌面或移动浏览器，页面自身没有外部字体、脚本或服务依赖。
+
+后台Codex配置使用标准库TOML解析，需要Python 3.11+；其他默认JSON配置支持Python 3.10+。不支持的自定义配置、JSONC或宿主管理策略会明确返回缺口，不覆盖客户配置。生财可读范围由本人账号权益决定。
 
 缺网络时，仍可做“仅原文”报告，但同行与当期政策保持未核。缺Python/文件生成能力时，不能宣称生成了完整版文件。模型质量和输入完整度仍影响研究质量。
 
@@ -55,11 +57,11 @@ python scripts/venture.py merge-tasks ./work/project.json --tasks ./work/project
 
 ## 包内没有什么
 
-没有私人账号配置、自动发信、云盘存储、小时定时器、专有站内检索、付费原文样本或登录令牌。提供的是研究与本地报告工具，不是替客户经营的无人值守机器人。
+包内有生财公共MCP端点、后台配置脚本和可选登录教程；没有作者或客户的登录令牌、付费原文样本、自动发信、云盘存储或定时器。客户OAuth由自己的宿主保存，选择记录独立保留。
 
 ## 质量与权限
 
-默认不保证收益、不代客户对外交易、不自动安装工具或抓取受限内容。示例主文为原创虚构材料，公开同行的来源已列入报告，不含任何用户私人报告。授权与使用边界见 [USAGE.md](USAGE.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。
+默认后台安装本Skill并预配置生财连接；不自动下载依赖、不代客户注册付款、不保证收益、不绕权限读取。示例主文为原创虚构材料，公开同行来源已列入报告，不含用户私人报告。授权与使用边界见 [USAGE.md](USAGE.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 卖家换品牌与维护
 
