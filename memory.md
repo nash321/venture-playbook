@@ -6,7 +6,7 @@
 - 已补齐页底原图卡、SOP编译验收交付、其他宿主出口、兼容Python、保存HTML恢复、海报自检、引导状态校验及Gemini实际连接名。95项测试、8节点结构及隔离Cursor客户实走通过；冻结82项三版回归通过，五题比较候选5项通过。
 - 9.1.0的82项测试、六节点、八题比较与网页ADOPT属于历史验收。9.1.1由用户明确省略网页复核后发布；已返回的具体建议已修，SDK仍为TIMEOUT，不冒称ADOPT。协同工作区6和9已关闭。
 - 旧正式9.1.0包及早期9.1.1候选包已移至 `temp/releases/`，旧准备回执保留历史，以 `temp/finalize-9.1.1/activation-receipt.json` 和最新进度为准。9.1.0字节回滚包保留于 `temp/footer-upgrade/baseline-v9.1.0.zip`。
-- 最终源码已提交至本地Git，正式标签 `venture-playbook-v9.1.1` 已建立；没有执行远端推送。版本收尾回执见 `temp/finalize-9.1.1/closeout-receipt.json`。
+- 9.1.1正式标签已保留；本轮开发历史及9.0.0、9.1.0、9.1.1标签已同步到Gitee私有仓库 `cursorsome/venture-playbook`，远端读回一致。origin已绑定，master跟踪origin/master。推送回执见 `temp/gitee-push/`；9.1.1原发布回执见 `temp/finalize-9.1.1/closeout-receipt.json`。
 - 本机Codex全局安装已生效，未发起或完成原生OAuth。激活时原配置与首次选择指纹不变；暂停期间宿主总配置在11:35另有变化，恢复时生财公共连接仍正确、首次选择不变，本轮保留现状。
 - 原始会员体验卡海报随包发布，桌面/手机真实显示已检查；二维码来自原图，3天体验为用户指定权益口径，未实测领取权益。
 - 真实精华帖全流程将复用当前已有生财云端连接；不得将云端工具读取成功冒称原生Codex OAuth完成。
