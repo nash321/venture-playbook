@@ -341,10 +341,10 @@ def render(data):
     payload=json.dumps(state_data,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     h=lambda s:base64.b64encode(hashlib.sha256(s.encode('utf-8')).digest()).decode('ascii')
     csp=f"default-src 'none'; script-src 'sha256-{h(js)}'; style-src 'sha256-{h(css)}'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
-    nav=[('overview','01','决策速览'),('source','02','原文精读'),('cases','03','同类比较'),('business','04','生意逻辑'),('actions','05','行动工作台'),('states','06','状态与下一步'),('sources','07','来源与边界')]
+    nav=[('overview','01','先看结论'),('source','02','原文到底讲了什么'),('cases','03','别人怎么做'),('business','04','这门生意怎么运转'),('actions','05','我的待办清单'),('states','06','遇到情况怎么办'),('sources','07','资料和未确认的事')]
     doc=['<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="report-id" content="'+esc(rid)+'"><meta name="research-status" content="'+esc(d['research_status'])+'"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>'+esc(d['title'])+' · '+esc(brand['name'])+'</title><style id="vp-style">'+css+'</style></head><body>']
     doc.append('<a class="skip-link" href="#overview">跳到报告正文</a><aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">'+esc(brand['mark'])+'</span>'+esc(brand['name'])+'</a><div class="brand-sub">'+esc(brand['english_name'])+'</div><p class="nav-caption">报告导航</p><nav class="nav-links" aria-label="报告目录">'+''.join(f'<a href="#{i}"><span>{n}</span>{label}</a>' for i,n,label in nav)+'</nav><div class="sidebar-foot"><p>'+esc(brand['tagline'])+'</p><p>本地文件 · 无账户 · 无追踪</p></div></aside><div class="shell"><div class="topbar"><span>'+esc(d.get('generated_on','日期未填写'))+' · '+esc(d.get('edition','研究与执行版'))+'</span><a href="#sources">哪些查过、哪些还没确认</a></div><main>')
-    doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入行动工作台 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>作者说法、查到的资料和本报告建议分别说明</span><span>待办可编辑，可离线保留</span></div></header>')
+    doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入我的待办清单 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>作者说法、查到的资料和本报告建议分别说明</span><span>待办可编辑，可离线保留</span></div></header>')
     doc.append(referral_card())
     verdict=d['verdict'];project=d.get('project',{})
     doc.append('<section id="overview">')
@@ -370,7 +370,7 @@ def render(data):
     if d.get('cases'):
         doc.append('<div class="table-wrap" tabindex="0" role="region" aria-label="同类项目对照表"><table><thead><tr><th>项目与可比性</th><th>收费与交付</th><th>值得借鉴</th><th>不能直接照搬</th></tr></thead><tbody>')
         for c in d['cases']:
-            relationship={'direct':'同机制','adjacent':'相邻机制','counter':'反例/替代'}[c['relationship']]
+            relationship={'direct':'同一类服务','adjacent':'一部分做法相近','counter':'反例或替代做法'}[c['relationship']]
             doc.append('<tr><td><strong>'+esc(c['name'])+'</strong><br>'+esc(relationship)+'</td><td>'+esc(c['payment_evidence'])+'</td><td>'+esc(c['transferable'])+'</td><td>'+esc(c['risk'])+'</td></tr>')
         doc.append('</tbody></table></div>')
         for c in d['cases']:
@@ -407,10 +407,10 @@ def render(data):
     doc.append('</section><section id="sources" class="section">'+section_head('07','依据在哪里，未知又在哪里','引用用于支持具体陈述。官方产品页面能证明其公开服务安排，不能独立证明经营收入。'))
     for s in d.get('sources',[]):
         link=f'<a href="{esc(safe_url(s.get("url","")))}" target="_blank" rel="noopener noreferrer">{esc(s["title"])}</a>' if s.get('url') else '<strong>'+esc(s['title'])+'</strong>'
-        doc.append('<div class="source-item" id="ref-'+esc(s['id'])+'"><span class="ref-id">'+esc(s['id'])+'</span><div>'+link+p('来源：'+s.get('publisher','提供材料')+' · 阅读：'+s.get('read_status','not_read')+' · 读取日：'+s.get('accessed_on','未记录'))+p(s.get('supports',''))+p(s.get('limitations',''))+'</div></div>')
-    if d.get('limitations'): doc.append('<div class="sources-note"><h4>仍需补证</h4>'+ul(d['limitations'])+'</div>')
+        doc.append('<div class="source-item" id="ref-'+esc(s['id'])+'"><span class="ref-id">'+esc(s['id'])+'</span><div>'+link+p('来源：'+s.get('publisher','提供材料')+' · 阅读：'+{'full':'已读完整正文','partial':'只读到一部分','blocked':'暂时打不开','not_read':'尚未读正文'}.get(s.get('read_status','not_read'),'尚未读正文')+' · 读取日：'+s.get('accessed_on','未记录'))+p(s.get('supports',''))+p(s.get('limitations',''))+'</div></div>')
+    if d.get('limitations'): doc.append('<div class="sources-note"><h4>还有哪些没查清</h4>'+ul(d['limitations'])+'</div>')
     if guide:
-        doc.append('<div id="reader-check" class="sources-note"><h3>读完后，试着自己回答</h3>'+p('先不展开答案，用自己的话回答，再对照正文。自检题不是测试成绩；真实读者理解验收尚未执行。','small-copy'))
+        doc.append('<div id="reader-check" class="sources-note"><h3>读完后，试着自己回答</h3>'+p('先不展开答案，用自己的话回答，再对照正文。自检题不是测试成绩；还没有请真实读者独立回答这些问题。','small-copy'))
         for check in guide.get('self_check',[]):
             target='chapter-'+check['section_id'] if check.get('section_id') else 'overview'
             doc.append('<details class="case-detail"><summary>'+esc(check['question'])+'</summary><div class="case-body"><div>'+p(check['answer'])+'<a href="#'+esc(target)+'">回到相关章节核对</a></div></div></details>')
@@ -463,7 +463,7 @@ def check_html(path):
     if len(inv.ids)!=len(set(inv.ids)):errors.append('DOM编号重复。')
     if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
     if inv.referral_link.get('tag')!='button' or inv.referral_link.get('type')!='button' or 'href' in inv.referral_link:errors.append('海报必须使用放大按钮，不能跳转外部页面。')
-    if '</header>'+referral_card()+'<section id="overview">' not in text:errors.append('完整分享图卡必须位于标题后、决策速览前。')
+    if '</header>'+referral_card()+'<section id="overview">' not in text:errors.append('完整分享图卡必须位于标题后、先看结论前。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)
     if inv.scripts.get('vp-runtime','')!=(ROOT/'assets/tasks.js').read_text('utf-8'):errors.append('交互脚本与受信任内置版本不一致。')
@@ -546,7 +546,7 @@ def export_tasks(data):
 
 def scaffold(title):
     slug='project-'+hashlib.sha256(title.encode()).hexdigest()[:10]
-    return {'schema_version':1,'report_id':slug,'title':title,'subtitle':'从原文与公开证据，走到可执行的小规模验证。','generated_on':date.today().isoformat(),'research_status':'draft','source_mode':'article','verdict':{'decision':'等待完成原文精读','reason':'当前仅初始化工作文件，没有把作者收入或搜索结果当作已验证事实。','next_step':'读取提供的主体原文，保留作者自然章节。','avoid':'不要先生成泛化商业计划或编造同行。'},'project':{'buyer':'待原文明确','deliverable':'待核','revenue_model':'待核'},'evidence_boundary':'这是一份待填充的研究工作文件，不是完成报告。','sources':[],'expected_source_sections':[],'source_sections':[],'cases':[],'synthesis':{'shared':[],'differences':[]},'negative_search':{'status':'not_started','note':'反例搜索尚未执行。'},'business':{'workflow':[],'sections':[]},'milestones':[],'tasks':[],'states':[],'limitations':['尚未读取原文与网络证据。'],'review':{'source_fidelity':'not_checked','independence':'not_checked','notes':''}}
+    return {'schema_version':1,'report_id':slug,'title':title,'subtitle':'从原文与公开证据，走到可执行的小规模验证。','generated_on':date.today().isoformat(),'research_status':'draft','source_mode':'article','verdict':{'decision':'等待完成原文到底讲了什么','reason':'当前仅初始化工作文件，没有把作者收入或搜索结果当作已验证事实。','next_step':'读取提供的主体原文，保留作者自然章节。','avoid':'不要先生成泛化商业计划或编造同行。'},'project':{'buyer':'待原文明确','deliverable':'待核','revenue_model':'待核'},'evidence_boundary':'这是一份待填充的研究工作文件，不是完成报告。','sources':[],'expected_source_sections':[],'source_sections':[],'cases':[],'synthesis':{'shared':[],'differences':[]},'negative_search':{'status':'not_started','note':'反例搜索尚未执行。'},'business':{'workflow':[],'sections':[]},'milestones':[],'tasks':[],'states':[],'limitations':['尚未读取原文与网络证据。'],'review':{'source_fidelity':'not_checked','independence':'not_checked','notes':''}}
 
 
 def queries(data):
