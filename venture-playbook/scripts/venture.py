@@ -293,7 +293,7 @@ def poster_uri():
 
 
 def referral_card():
-    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><div class="referral-copy"><span class="referral-label">生财有术 · 会员体验卡</span><h2 id="referral-title"><span>让AI陪你拆解</span><span>更多赚钱项目</span></h2><p>扫码或点击领取生财有术<strong>3天体验</strong>，看看真实项目怎样起步、获客和交付。</p><div class="referral-actions"><a id="referral-cta" class="btn primary" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer">领取3天体验 <span aria-hidden="true">↗</span></a><a class="btn quiet" href="#overview">先看报告 <span aria-hidden="true">↓</span></a></div><p class="referral-benefit">对接生财有术后，让AI直接连接文章资料并自动分析，从海量历史记录中挖掘与你业务相关的案例、经验和方法。</p></div><a id="referral-link" class="referral-poster-link" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer" aria-label="打开作者的生财有术分享入口"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="eager"><span class="referral-caption">扫码或点击图卡领取</span></a></section>'
+    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><div class="referral-copy"><span class="referral-label">生财有术 · 会员体验卡</span><h2 id="referral-title"><span>让 AI 帮你找项目，</span><span>把生意做明白</span></h2><p class="referral-scan">用手机扫描海报上的二维码，领取<strong>3天体验</strong>。</p><p class="referral-benefit">告诉 AI 你想做什么生意。连接生财有术后，它会从精华帖、风向标等文章中，帮你找相关案例、拆解实战方法，整理下一步怎么做，让你少走弯路、更快找到机会。</p><div class="referral-actions"><a class="btn quiet" href="#overview">先看报告 <span aria-hidden="true">↓</span></a></div></div><button id="referral-link" type="button" class="referral-poster-link" aria-label="点击放大体验卡海报，方便扫码" aria-haspopup="dialog"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="eager"><span class="referral-caption">点击海报放大，扫码更清楚</span></button></section>'
 
 
 def render(data):
@@ -403,7 +403,7 @@ class Inventory(HTMLParser):
             value=a.get(key,'').strip()
             if re.match(r'(?i)javascript:|vbscript:',value):self.errors.append('含脚本网址。')
         if tag=='a':self.links.append(a.get('href',''))
-        if tag=='a' and a.get('id')=='referral-link':self.referral_link=a
+        if a.get('id')=='referral-link':self.referral_link={**a,'tag':tag}
         if tag=='img' and a.get('id')=='referral-poster':self.referral_image=a
         if tag=='link':self.errors.append('页面不应依赖外部样式或字体。')
         if tag=='script':
@@ -428,7 +428,7 @@ def check_html(path):
     if inv.metas.get('charset','').lower()!='utf-8' or not inv.lang.startswith('zh') or 'viewport' not in inv.metas:errors.append('缺少中文、UTF-8或移动端声明。')
     if len(inv.ids)!=len(set(inv.ids)):errors.append('DOM编号重复。')
     if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
-    if inv.referral_link.get('href')!=REFERRAL_URL:errors.append('缺少作者固定分享入口或链接已被替换。')
+    if inv.referral_link.get('tag')!='button' or inv.referral_link.get('type')!='button' or 'href' in inv.referral_link:errors.append('海报必须使用放大按钮，不能跳转外部页面。')
     if '</header>'+referral_card()+'<section id="overview">' not in text:errors.append('完整分享图卡必须位于标题后、决策速览前。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)

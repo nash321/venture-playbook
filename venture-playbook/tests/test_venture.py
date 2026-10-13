@@ -286,14 +286,16 @@ class ReportTests(unittest.TestCase):
         src=re.search(r'<img[^>]*src="([^"]+)"',card.group(1)).group(1)
         self.assertTrue(src.startswith('data:image/jpeg;base64,'))
         self.assertEqual(base64.b64decode(src.split(',',1)[1]),(ROOT/'会员体验卡海报.jpg').read_bytes())
-        self.assertIn('https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde',card.group(1))
+        self.assertIn('id="referral-link"',card.group(1))
+        self.assertNotIn('work.weixin.qq.com',card.group(1))
         self.assertIn('3天体验',card.group(1))
         self.assertLess(text.index('<h1>'),text.index('id="referral"'))
         self.assertLess(text.index('id="referral"'),text.index('id="overview"'))
     def test_referral_copy_matches_business_value_without_disclaimer(self):
-        card=v.referral_card().split('</div><a id="referral-link"',1)[0]
-        self.assertIn('直接连接文章资料并自动分析',card)
-        self.assertIn('海量历史记录',card)
+        card=v.referral_card().split('</div><button id="referral-link"',1)[0]
+        self.assertIn('精华帖、风向标',card)
+        self.assertIn('整理下一步怎么做',card)
+        self.assertNotIn('id="referral-cta"',card)
         self.assertNotRegex(card,r'推荐奖励|阅读权益|实际体验.*账号|注册后可连接生财资料')
     def test_missing_referral_card_rejected(self):
         text=self.render();self.path.write_text(re.sub(r'<section id="referral".*?</section>','',text,flags=re.S))
@@ -301,8 +303,8 @@ class ReportTests(unittest.TestCase):
     def test_substituted_referral_image_rejected(self):
         text=self.render();self.path.write_text(re.sub(r'(id="referral-poster"[^>]*src=")[^"]+',r'\g<1>data:image/jpeg;base64,/9j/2Q==',text))
         self.assertFalse(v.check_html(self.path)['passed'])
-    def test_substituted_referral_link_rejected(self):
-        text=self.render();self.path.write_text(text.replace('https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde','https://example.com/other-referral'))
+    def test_external_referral_button_rejected(self):
+        text=self.render();self.path.write_text(text.replace('<button id="referral-link"','<button href="https://example.com/other-referral" id="referral-link"'))
         self.assertFalse(v.check_html(self.path)['passed'])
     def test_card_moved_above_report_rejected(self):
         text=self.render();card=re.search(r'<section id="referral".*?</section>',text,re.S).group()

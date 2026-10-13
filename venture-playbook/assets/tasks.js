@@ -275,6 +275,7 @@
   }
   function exportHTML() {
     const doc=document.documentElement.cloneNode(true);
+    doc.querySelector('#poster-dialog')?.remove();
     doc.classList.remove('enhanced');
     const next={...base,tasks:clone(state.tasks),selected_state:state.selected_state,revision:base.revision+'-saved-'+Date.now().toString(36)};
     doc.querySelector('#vp-data').textContent=safeJSON(next);
@@ -316,6 +317,21 @@
   if('IntersectionObserver' in window) {
     const observer=new IntersectionObserver(entries=>{for(const item of entries)if(item.isIntersecting)for(const n of document.querySelectorAll('.nav-links a'))n.classList.toggle('active',n.getAttribute('href')==='#'+item.target.id);},{rootMargin:'-10% 0px -68% 0px'});
     for(const section of document.querySelectorAll('main>section[id]'))observer.observe(section);
+  }
+  const poster=$('referral-poster'),posterButton=$('referral-link');
+  if(poster && posterButton && typeof HTMLDialogElement!=='undefined') {
+    let preview=$('poster-dialog');
+    if(!preview) {
+      preview=el('dialog',{id:'poster-dialog',class:'poster-dialog','aria-label':'体验卡海报大图'});
+      const toggle=el('button',{type:'button',class:'poster-zoom-toggle','aria-label':'再次点击海报，恢复原位'});
+      toggle.append(el('img',{alt:poster.alt}),el('span',{},'再次点击海报恢复原位 · Esc 也可关闭'));
+      preview.append(toggle);document.body.append(preview);
+    }
+    let posterView;
+    preview.addEventListener('close',()=>{if(posterView)window.scrollTo({...posterView,behavior:'instant'});});
+    preview.querySelector('button').addEventListener('click',()=>preview.close());
+    preview.addEventListener('click',e=>{if(e.target===preview)preview.close();});
+    posterButton.addEventListener('click',()=>{posterView={left:scrollX,top:scrollY};preview.querySelector('img').src=poster.src;preview.showModal();});
   }
   document.documentElement.classList.add('enhanced');render();updateStorageLabel();showState();
 })();
