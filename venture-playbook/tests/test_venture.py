@@ -290,6 +290,11 @@ class ReportTests(unittest.TestCase):
         self.assertIn('3天体验',card.group(1))
         self.assertLess(text.index('<h1>'),text.index('id="referral"'))
         self.assertLess(text.index('id="referral"'),text.index('id="overview"'))
+    def test_referral_copy_matches_business_value_without_disclaimer(self):
+        card=v.referral_card().split('</div><a id="referral-link"',1)[0]
+        self.assertIn('直接连接文章资料并自动分析',card)
+        self.assertIn('海量历史记录',card)
+        self.assertNotRegex(card,r'推荐奖励|阅读权益|实际体验.*账号|注册后可连接生财资料')
     def test_missing_referral_card_rejected(self):
         text=self.render();self.path.write_text(re.sub(r'<section id="referral".*?</section>','',text,flags=re.S))
         self.assertFalse(v.check_html(self.path)['passed'])
