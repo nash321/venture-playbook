@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 from contextlib import redirect_stdout
 import io
+import xml.etree.ElementTree as ET
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('venture',ROOT/'scripts/venture.py')
@@ -205,6 +206,28 @@ class TasksTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_workflow_graph_keeps_order_conditions_and_text_alternative(self):
+        steps=[{'title':'找真实需求','detail':'没有原始材料就先暂停。'},
+               {'title':'做可核对的试样','detail':'试样通过仍不代表已成交。'}]
+        rendered=v.workflow_graph(steps)
+        for fragment in re.findall(r'<svg\b.*?</svg>',rendered,re.S):
+            graph=ET.fromstring(fragment)
+            self.assertEqual(graph.attrib['role'],'img')
+            ns={'svg':'http://www.w3.org/2000/svg'}
+            self.assertEqual([n.attrib['data-step'] for n in graph.findall('svg:g',ns)],['1','2'])
+            self.assertEqual(len(graph.findall('svg:path',ns)),1)
+            self.assertTrue(graph.find('svg:desc',ns).text)
+        self.assertEqual(len(re.findall(r'<svg\b',rendered)),2)
+        for step in steps:self.assertIn(step['detail'],rendered)
+
+    def test_workflow_graph_escapes_input_and_handles_single_step(self):
+        rendered=v.workflow_graph([{'title':'<script>坏输入</script>','detail':'保留条件'}])
+        self.assertNotIn('<script>',rendered)
+        for fragment in re.findall(r'<svg\b.*?</svg>',rendered,re.S):
+            graph=ET.fromstring(fragment)
+            self.assertEqual(len(graph.findall('{http://www.w3.org/2000/svg}path')),0)
+            self.assertIn('<script>坏输入</script>',''.join(graph.itertext()))
+        self.assertEqual(v.workflow_graph([]),'')
     def setUp(self):self.temp=tempfile.TemporaryDirectory();self.path=Path(self.temp.name)/'report.html'
     def tearDown(self):self.temp.cleanup()
     def render(self,data=None):self.path.write_text(v.render(data or fixture()),encoding='utf-8');return self.path.read_text()

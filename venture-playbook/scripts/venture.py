@@ -139,7 +139,7 @@ def validate_data(data):
     if data.get('research_status') not in RESEARCH: raise InputError('research_status不支持。')
     if data.get('source_mode','article') not in {'article','idea'}: raise InputError('source_mode应为article或idea。')
     verdict=data.get('verdict',{})
-    if not isinstance(verdict,dict) or not all(isinstance(verdict.get(k),str) and verdict[k].strip() for k in ['decision','reason','next_step']): raise InputError('请填写结论、理由和唯一下一步。')
+    if not isinstance(verdict,dict) or not all(isinstance(verdict.get(k),str) and verdict[k].strip() for k in ['decision','reason','next_step']): raise InputError('请填写结论、理由和现在先做这一件事。')
     source_ids=set()
     for s in arr(data,'sources'):
         if not isinstance(s,dict) or not ID.fullmatch(string(s.get('id'),'来源ID',True,100)): raise InputError('来源需要有效ID。')
@@ -255,13 +255,47 @@ def badge(text,kind=''): return f'<span class="flag {kind}">{esc(text)}</span>'
 def section_head(number,title,note): return f'<div class="section-heading"><div><p class="section-number">{esc(number)}</p><h2>{esc(title)}</h2>{p(note,"section-note")}</div></div>'
 
 
+def workflow_graph(steps):
+    if not steps:return ''
+    titles=[v['title'] for v in steps]
+    description=' → '.join(titles)+'。箭头表示依次检查；每一步的条件见图下说明。'
+    graphs=[]
+    node_height=max(80,36+max((len(t)+8)//9 for t in titles)*21)
+    pitch=node_height+36
+    for variant,columns in [('wide',4),('narrow',1)]:
+        width=900 if columns==4 else 260
+        height=((len(steps)+columns-1)//columns)*pitch+20
+        marker='workflow-arrow-'+variant
+        nodes=[];points=[]
+        for i,title in enumerate(titles):
+            row,col=divmod(i,columns)
+            if row%2:col=columns-1-col
+            x=20+col*220;y=20+row*pitch
+            points.append((x,y))
+            lines=[title[j:j+9] for j in range(0,len(title),9)]
+            text=''.join(f'<tspan x="{x+100}" dy="{0 if j==0 else 21}">{esc(line)}</tspan>' for j,line in enumerate(lines))
+            nodes.append(f'<g data-step="{i+1}"><rect x="{x}" y="{y}" width="200" height="{node_height}" rx="12"/><text class="flow-number" x="{x+14}" y="{y+21}">{i+1}</text><text x="{x+100}" y="{y+node_height/2+6-(len(lines)-1)*10.5}" text-anchor="middle">{text}</text></g>')
+        arrows=[]
+        for (x,y),(nx,ny) in zip(points,points[1:]):
+            if ny==y:
+                direction=1 if nx>x else -1
+                start=x+200 if direction==1 else x
+                end=nx-5 if direction==1 else nx+205
+                path=f'M {start} {y+node_height/2} H {end}'
+            else:path=f'M {x+100} {y+node_height} V {ny-6}'
+            arrows.append(f'<path d="{path}" marker-end="url(#{marker})"/>')
+        graphs.append(f'<svg class="workflow-svg {variant}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" role="img" aria-labelledby="workflow-title-{variant} workflow-desc-{variant}"><title id="workflow-title-{variant}">这门生意，按什么顺序检查</title><desc id="workflow-desc-{variant}">{esc(description)}</desc><defs><marker id="{marker}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><polygon points="0,0 8,4 0,8"/></marker></defs>'+''.join(arrows+nodes)+'</svg>')
+    details='<ol class="flow">'+''.join('<li class="flow-step"><strong>'+esc(v['title'])+'</strong>'+p(v.get('detail',''))+'</li>' for v in steps)+'</ol>'
+    return '<figure class="workflow-figure">'+''.join(graphs)+'<figcaption>顺着箭头看检查顺序。每一步需要什么、卡住时怎么办，看下面的说明。</figcaption></figure>'+details
+
+
 def render_task(t):
     checked=' checked' if t['status']=='done' else ''
     info=''.join('<span>'+esc(v)+'</span>' for v in [t['phase'],t['day'] or '时间待定',t['estimate'],t['owner'],PRIORITIES[t['priority']],STATUSES[t['status']]] if v)
     labels={'action':'怎么做','inputs':'先准备','tool':'工具与入口','deliverable':'交付什么','acceptance':'怎样算做完','on_failure':'失败怎么办','cost':'费用边界','notes':'我的备注'}
     body=''.join(f'<div class="{"wide" if k in {"action","notes"} else ""}"><span class="mini-label">{v}</span>{p(t[k])}</div>' for k,v in labels.items() if t[k])
-    body+=f'<div class="wide"><span class="mini-label">任务编号与依赖</span>{p(t["id"]+" · 前置："+("、".join(t["depends_on"]) or "无"))}</div>'
-    return f'<article class="task-row{" is-done" if checked else ""}" data-task-id="{esc(t["id"])}"><div class="task-main"><input type="checkbox" class="task-check" aria-label="完成：{esc(t["title"])}" disabled{checked}><div><h4 class="task-title">{esc(t["title"])}</h4><div class="task-meta">{info}</div></div></div><details class="task-details"><summary>步骤、产物与验收</summary><div class="task-detail-grid">{body}</div></details></article>'
+    body+=f'<div class="wide"><span class="mini-label">任务编号与先后顺序</span>{p(t["id"]+" · 前置："+("、".join(t["depends_on"]) or "无"))}</div>'
+    return f'<article class="task-row{" is-done" if checked else ""}" data-task-id="{esc(t["id"])}"><div class="task-main"><input type="checkbox" class="task-check" aria-label="完成：{esc(t["title"])}" disabled{checked}><div><h4 class="task-title">{esc(t["title"])}</h4><div class="task-meta">{info}</div></div></div><details class="task-details"><summary>怎么做、做完检查什么</summary><div class="task-detail-grid">{body}</div></details></article>'
 
 
 def dialogs():
@@ -272,14 +306,14 @@ def dialogs():
     fields=''.join([
         field('title','行动名称 *',inp('title',req=True,extra='maxlength="240"'),True),
         field('phase','阶段',inp('phase',extra='list="phase-options" maxlength="80"')),
-        field('day','计划时间窗',inp('day',extra='placeholder="例如 D3 上午 / 下周一"')),
+        field('day','计划什么时候做',inp('day',extra='placeholder="例如 D3 上午 / 下周一"')),
         field('due','截止日期',inp('due','date')),field('owner','负责人',inp('owner')),
         field('status','当前状态','<select name="status">'+opts(STATUSES)+'</select>'),
         field('priority','优先级','<select name="priority">'+opts(PRIORITIES)+'</select>'),
         field('estimate','预计耗时',inp('estimate',extra='placeholder="例如 30分钟；按实际情况调整"')),
         field('cost','预算或费用边界',inp('cost',extra='placeholder="未知则填写待核，不编造数字"')),
         field('action','具体怎么做 *',area('action',3,True),True),
-        field('inputs','输入材料',area('inputs')),field('tool','工具与入口',area('tool')),
+        field('inputs','先准备哪些材料',area('inputs')),field('tool','工具与入口',area('tool')),
         field('deliverable','交付什么 *',area('deliverable',2,True)),field('acceptance','怎样算做完 *',area('acceptance',2,True)),
         field('on_failure','失败或受阻时怎么办 *',area('on_failure',2,True),True),
         field('depends_on','前置任务编号',inp('depends_on',extra='placeholder="多个编号用逗号隔开"'),True),
@@ -309,8 +343,8 @@ def render(data):
     csp=f"default-src 'none'; script-src 'sha256-{h(js)}'; style-src 'sha256-{h(css)}'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
     nav=[('overview','01','决策速览'),('source','02','原文精读'),('cases','03','同类比较'),('business','04','生意逻辑'),('actions','05','行动工作台'),('states','06','状态与下一步'),('sources','07','来源与边界')]
     doc=['<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="report-id" content="'+esc(rid)+'"><meta name="research-status" content="'+esc(d['research_status'])+'"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>'+esc(d['title'])+' · '+esc(brand['name'])+'</title><style id="vp-style">'+css+'</style></head><body>']
-    doc.append('<a class="skip-link" href="#overview">跳到报告正文</a><aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">'+esc(brand['mark'])+'</span>'+esc(brand['name'])+'</a><div class="brand-sub">'+esc(brand['english_name'])+'</div><p class="nav-caption">报告导航</p><nav class="nav-links" aria-label="报告目录">'+''.join(f'<a href="#{i}"><span>{n}</span>{label}</a>' for i,n,label in nav)+'</nav><div class="sidebar-foot"><p>'+esc(brand['tagline'])+'</p><p>本地文件 · 无账户 · 无追踪</p></div></aside><div class="shell"><div class="topbar"><span>'+esc(d.get('generated_on','日期未填写'))+' · '+esc(d.get('edition','研究与执行版'))+'</span><a href="#sources">查看研究边界</a></div><main>')
-    doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入行动工作台 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>原文、公开证据与建议分别标记</span><span>待办可编辑，可离线保留</span></div></header>')
+    doc.append('<a class="skip-link" href="#overview">跳到报告正文</a><aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">'+esc(brand['mark'])+'</span>'+esc(brand['name'])+'</a><div class="brand-sub">'+esc(brand['english_name'])+'</div><p class="nav-caption">报告导航</p><nav class="nav-links" aria-label="报告目录">'+''.join(f'<a href="#{i}"><span>{n}</span>{label}</a>' for i,n,label in nav)+'</nav><div class="sidebar-foot"><p>'+esc(brand['tagline'])+'</p><p>本地文件 · 无账户 · 无追踪</p></div></aside><div class="shell"><div class="topbar"><span>'+esc(d.get('generated_on','日期未填写'))+' · '+esc(d.get('edition','研究与执行版'))+'</span><a href="#sources">哪些查过、哪些还没确认</a></div><main>')
+    doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入行动工作台 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>作者说法、查到的资料和本报告建议分别说明</span><span>待办可编辑，可离线保留</span></div></header>')
     doc.append(referral_card())
     verdict=d['verdict'];project=d.get('project',{})
     doc.append('<section id="overview">')
@@ -319,7 +353,7 @@ def render(data):
         doc.append('<div id="reading-guide" class="takeaway"><h3>先用白话看懂这件事</h3>'+p(guide['overview'])+'<p class="small-copy">先抓重点：看本页判断与各章第一句；准备动手：看<a href="#action-example">动作示例</a>与行动清单；核对细节：逐章阅读正文、案例和来源。完整细节均保留。</p><a href="#reader-check">读完后，用几个问题检查是否理解</a></div>')
         for term in guide.get('terms',[]):
             if not term.get('section_id'):doc.append(p(term['term']+'：'+term['explanation'],'small-copy'))
-    doc.append('<div class="decision"><div class="decision-main"><div class="decision-label">现在的判断</div><h3>'+esc(verdict['decision'])+'</h3>'+p(verdict['reason'])+'</div><div class="decision-side"><div><div class="decision-label">唯一下一步</div>'+p(verdict['next_step'])+'</div><div><div class="decision-label">暂时不要做</div>'+p(verdict.get('avoid','先不要放大未经验证的假设。'))+'</div></div></div><div class="facts-strip">'+''.join('<div class="fact"><span>'+label+'</span><strong>'+esc(project.get(k,'待核'))+'</strong></div>' for k,label in [('buyer','谁会付钱'),('deliverable','买到什么'),('revenue_model','如何收费')])+'</div>')
+    doc.append('<div class="decision"><div class="decision-main"><div class="decision-label">现在的判断</div><h3>'+esc(verdict['decision'])+'</h3>'+p(verdict['reason'])+'</div><div class="decision-side"><div><div class="decision-label">现在先做这一件事</div>'+p(verdict['next_step'])+'</div><div><div class="decision-label">暂时不要做</div>'+p(verdict.get('avoid','先不要放大未经验证的假设。'))+'</div></div></div><div class="facts-strip">'+''.join('<div class="fact"><span>'+label+'</span><strong>'+esc(project.get(k,'待核'))+'</strong></div>' for k,label in [('buyer','谁会付钱'),('deliverable','买到什么'),('revenue_model','如何收费')])+'</div>')
     if d.get('evidence_boundary'): doc.append('<div class="boundary">'+p(d['evidence_boundary'])+'</div>')
     doc.append('</section><section id="source" class="section">'+section_head('02','先读懂原文','沿作者的章节和因果顺序解读；旁边的建议，不冒充作者已经做过。'))
     if not d.get('source_sections'): doc.append(p('当前输入是项目想法，或主体原文尚未取得。下文不会伪造作者经历。','boundary'))
@@ -341,7 +375,7 @@ def render(data):
         doc.append('</tbody></table></div>')
         for c in d['cases']:
             doc.append('<details class="case-detail"><summary>'+esc(c['name'])+' · '+esc(c.get('angle','展开看具体机制'))+'</summary><div class="case-body">')
-            labels={'match_reason':'为什么可比','workflow':'从需求到交付','acquisition':'如何获客','costs':'成本与资源','retention':'复购与留存','payment_evidence':'付费证据到哪一步','transferable':'可以借鉴','risk':'不宜照搬'}
+            labels={'match_reason':'为什么可比','workflow':'从需求到交付','acquisition':'如何获客','costs':'要花什么、准备什么','retention':'复购与留存','payment_evidence':'有没有真的收到钱','transferable':'可以借鉴','risk':'不宜照搬'}
             for k,label in labels.items():
                 if c.get(k): doc.append('<div><span class="mini-label">'+label+'</span>'+p(c[k])+'</div>')
             doc.append('<div class="span-all">'+refs_html(c.get('source_ids',[]))+'</div></div></details>')
@@ -352,10 +386,10 @@ def render(data):
     if negative.get('note'): doc.append('<div class="boundary">'+p(negative['note'])+'</div>')
     doc.append('</section><section id="business" class="section">'+section_head('04','从看懂案例，到看清生意','以下为分析与待验证方案；只补作者没讲清楚的地方，不修改原文事实。'))
     business=d.get('business',{})
-    if business.get('workflow'): doc.append('<div class="flow">'+''.join('<div class="flow-step"><strong>'+esc(v['title'])+'</strong>'+p(v.get('detail',''))+'</div>' for v in business['workflow'])+'</div>')
+    if business.get('workflow'): doc.append(workflow_graph(business['workflow']))
     doc.append('<div class="analysis-grid">'+''.join('<div><h4>'+esc(s['title'])+'</h4>'+p(s['text'])+refs_html(s.get('source_ids',[]))+'</div>' for s in business.get('sections',[]))+'</div>')
     if business.get('economic_formula'): doc.append('<div class="takeaway"><div class="takeaway-label">先把账算完整</div>'+p(business['economic_formula'])+p(business.get('economic_note','缺失价格、成本或样本时保持未知；不以作者峰值收入代替自己的预期。'),'small-copy')+'</div>')
-    doc.append('</section><section id="actions" class="section">'+section_head('05','把报告，变成今天能做的事','每项行动都有输入、产物、通过标准和失败分支。修改只影响你的计划，不会改写研究依据。'))
+    doc.append('</section><section id="actions" class="section">'+section_head('05','把报告，变成今天能做的事','每项待办都写清先准备什么、怎么做、做完检查什么、卡住了怎么办。修改待办只改你的计划，报告依据保持原样。'))
     doc.append('<div class="roadmap">'+''.join('<div class="milestone"><span>'+esc(m['horizon'])+'</span><h4>'+esc(m['title'])+'</h4>'+p(m['acceptance'])+'</div>' for m in d.get('milestones',[]))+'</div>')
     doc.append(p(d.get('schedule_note','这是建议排期，不是作者实测耗时；按自己的时间调整，不以任务打勾冒充真实收入。'),'small-copy'))
     if guide:
