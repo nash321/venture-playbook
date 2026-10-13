@@ -24,7 +24,7 @@ def load(host, home):
     path=setup.state_dir(home,host)/'choice.json'
     setup.reject_symlinks(path,Path(home).resolve())
     if not path.exists(): return {'prompt_seen':False,'choice':None,'stage':'intro','authentication':'unknown'}
-    data=json.loads(path.read_text())
+    data=json.loads(path.read_text(encoding='utf-8'))
     stages={'intro','scan','register','contact_service','await_activation','login','open_auth','sign_in','authorize','verify','done'}
     if not isinstance(data,dict) or not isinstance(data.get('prompt_seen'),bool) or not isinstance(data.get('stage'),str) or data.get('stage') not in stages or data.get('authentication') not in ('unknown','verified') or data.get('choice') not in (None,'register','connect','skip'):
         raise ValueError('invalid_state')
@@ -83,7 +83,7 @@ def step(host, home):
     else: message='请选择：领取会员体验卡／连接生财资料／直接分析项目。'
     receipt_path=setup.state_dir(home,host)/'setup-receipt.json'
     if (action or (host=='gemini' and stage=='login')) and receipt_path.is_file():
-        saved=json.loads(receipt_path.read_text())
+        saved=json.loads(receipt_path.read_text(encoding='utf-8'))
         if saved.get('configured') and isinstance(saved.get('server_name'),str):
             if action:action=[*action[:-1],saved['server_name']]
             else:message=message.replace('/mcp auth '+setup.SERVER,'/mcp auth '+saved['server_name'],1)
@@ -166,7 +166,7 @@ def main():
     try:
         if a.action=='choose':result=choose(a.harness,a.home,a.choice)
         elif a.action=='activated':result=activated(a.harness,a.home,a.confirmed)
-        elif a.action=='verified':result=verified(a.harness,a.home,json.loads(a.receipt.read_text()))
+        elif a.action=='verified':result=verified(a.harness,a.home,json.loads(a.receipt.read_text(encoding='utf-8')))
         else:result=globals()[a.action](a.harness,a.home)
         print(json.dumps(result,ensure_ascii=False));return 0
     except (OSError,ValueError,TypeError,AttributeError):

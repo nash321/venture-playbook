@@ -4,6 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import io
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('setup_venture', ROOT/'scripts/setup.py')
@@ -19,6 +21,27 @@ class InstallTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=ROOT.parent/'temp')
         self.home = Path(self.temp.name)
     def tearDown(self): self.temp.cleanup()
+    def test_non_utf8_default_keeps_chinese_connection_name(self):
+        path=self.home/'.gemini/settings.json';path.parent.mkdir(parents=True)
+        path.write_bytes(json.dumps({'mcpServers':{'生财资料':{'httpUrl':setup.ENDPOINT}}},ensure_ascii=False).encode('utf-8'))
+        setup.ensure('gemini',self.home)
+        original=io.open
+        for codec in ['gbk','cp1252']:
+            guide.choose('gemini',self.home,'connect')
+            def locale_open(file,mode='r',buffering=-1,encoding=None,errors=None,newline=None,closefd=True,opener=None):
+                if 'b' not in mode and encoding in (None,'locale'):encoding=codec
+                return original(file,mode,buffering,encoding,errors,newline,closefd,opener)
+            with self.subTest(codec=codec),patch('io.open',locale_open):
+                self.assertIn('/mcp auth 生财资料',guide.login('gemini',self.home)['instruction'])
+    def test_install_receipt_is_utf8_with_non_utf8_default(self):
+        home=self.home/'中文用户';report=self.home/'安装回执.json';original=io.open
+        def locale_open(file,mode='r',buffering=-1,encoding=None,errors=None,newline=None,closefd=True,opener=None):
+            if 'b' not in mode and encoding in (None,'locale'):encoding='cp1252'
+            return original(file,mode,buffering,encoding,errors,newline,closefd,opener)
+        with patch('io.open',locale_open),patch.object(sys,'argv',['setup.py','--harness','codex','--home',str(home),'--report',str(report)]):
+            self.assertEqual(setup.main(),0)
+        receipt=json.loads(report.read_bytes().decode('utf-8'))
+        self.assertEqual(receipt['config_path'],str(home/'.codex/config.toml'))
     def test_each_host_global_config_without_login(self):
         for host in setup.HOSTS:
             with self.subTest(host=host):

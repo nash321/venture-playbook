@@ -13,6 +13,16 @@
 
 依据2026-10-13实际读取的官方资料。Windsurf文档已转向Devin Desktop；旧版仍用其他路径时，不把当前路径当旧版实测。Windows的Devin配置使用%APPDATA%/devin/mcp_config.json。脚本遵从已支持的CODEX_HOME和XDG配置位置；自定义CLAUDE_CONFIG_DIR返回缺口，交由实际客户端原生机制处理。
 
+## Mac与Windows共用一套代码
+
+生成器、安装器、引导脚本及HTML模板共用同一份；目录通过Python路径库和本机用户目录解析，不把Mac绝对路径带到Windows。Agent先定位已安装的兼容Python，统一以 `python -X utf8` 方式执行，再按当前命令行引用带空格的路径。安装回执与用户状态明确采用UTF-8读写，避免依赖系统默认编码。
+
+报告可直接在本机浏览器阅读，不需要Python；生成或安装需满足下文Python版本。自动打开优先当前宿主的真实浏览器工具，也可使用本机默认浏览器，不要求安装Ego Lite。发出打开动作后仍须回读页面，不能只凭启动命令称前台已显示。
+
+Mac浏览器的本地待办不会跟随原HTML自动转移到Windows；迁移前保存完整报告或备份待办，再在新电脑打开副本或导入。基础分析不要求登录生财；要在新电脑连接生财，需要按新电脑宿主检查连接并完成本人授权，不复制Mac凭据。
+
+当前Windows证据仅为本机模拟GBK/CP1252默认文本编码的回归检查，未执行Windows真机安装、浏览器前台打开或OAuth；不能记为Windows端到端已验收。
+
 ## 默认配置与可选认证
 
 公共端点：https://mcp.scys.com/shengcai-web/mcp；连接名scys-mcp。端点来自scys.com/mcp实际加载的官方公开配置源，工作文件保留核对记录。官方上手指南使用本人账号OAuth，内容以本人权限为限。

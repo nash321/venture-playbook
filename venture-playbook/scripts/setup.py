@@ -193,7 +193,7 @@ def main():
         result={'configured':False,'reason':reason,'authentication':'not_attempted'};code=2
     if args.report:
         args.report.parent.mkdir(parents=True,exist_ok=True)
-        args.report.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+        args.report.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     if args.json: print(json.dumps(result,ensure_ascii=False))
     return code
 
