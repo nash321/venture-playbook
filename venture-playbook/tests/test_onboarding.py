@@ -109,11 +109,12 @@ class InstallTests(unittest.TestCase):
 
 
 class GuideTests(unittest.TestCase):
-    def test_registration_instruction_tells_customer_to_return_to_chat(self):
+    def test_customer_service_instruction_tells_customer_to_return_after_activation(self):
         guide.choose('codex',self.home,'register')
         result=guide.advance('codex',self.home)
         self.assertIn('回到这段 AI 对话',result['instruction'])
-        self.assertIn('已注册',result['instruction'])
+        self.assertIn('客服',result['instruction'])
+        self.assertIn('开通3天体验卡',result['instruction'])
         self.assertEqual(result['agent_action'],[])
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(dir=ROOT.parent/'temp')
@@ -124,11 +125,12 @@ class GuideTests(unittest.TestCase):
         guide.choose('codex',self.home,'skip')
         self.assertFalse(guide.status('codex',self.home)['show_intro'])
         self.assertEqual(guide.status('codex',self.home)['mode'],'web')
-    def test_registered_continues_login_one_step(self):
+    def test_activated_trial_continues_login_one_step(self):
         guide.choose('codex',self.home,'register')
         self.assertEqual(guide.step('codex',self.home)['stage'],'scan')
-        self.assertEqual(guide.advance('codex',self.home)['stage'],'register')
-        self.assertEqual(guide.advance('codex',self.home)['stage'],'verify')
+        self.assertEqual(guide.advance('codex',self.home)['stage'],'contact_service')
+        self.assertEqual(guide.advance('codex',self.home)['stage'],'await_activation')
+        self.assertEqual(guide.activated('codex',self.home,confirmed=True)['stage'],'verify')
         self.assertEqual(guide.login('codex',self.home)['stage'],'login')
         result=guide.step('codex',self.home)
         self.assertIsInstance(result['instruction'],str)
@@ -173,7 +175,7 @@ class GuideTests(unittest.TestCase):
         guide.choose('cursor',self.home,'register');guide.advance('cursor',self.home)
         guide.choose('cursor',self.home,'skip')
         self.assertEqual(guide.step('cursor',self.home)['stage'],'done')
-        self.assertEqual(guide.resume('cursor',self.home)['stage'],'register')
+        self.assertEqual(guide.resume('cursor',self.home)['stage'],'contact_service')
     def test_resume_login_checks_connection_again(self):
         guide.choose('codex',self.home,'connect');guide.login('codex',self.home)
         guide.choose('codex',self.home,'skip')
@@ -181,7 +183,42 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(result['stage'],'verify');self.assertEqual(result['agent_action'],[])
     def test_resume_without_skip_keeps_current_registration_step(self):
         guide.choose('codex',self.home,'register');guide.advance('codex',self.home)
-        self.assertEqual(guide.resume('codex',self.home)['stage'],'register')
+        self.assertEqual(guide.resume('codex',self.home)['stage'],'contact_service')
+    def test_pending_trial_connection_and_check_keep_waiting(self):
+        guide.choose('codex',self.home,'register')
+        for action in [lambda:guide.choose('codex',self.home,'connect'),lambda:guide.check('codex',self.home)]:
+            result=action()
+            self.assertEqual(result['stage'],'await_activation')
+            self.assertEqual(result['agent_action'],[])
+    def test_pending_trial_cannot_login_or_advance_past_activation(self):
+        guide.choose('codex',self.home,'register');guide.advance('codex',self.home);guide.advance('codex',self.home)
+        for action in [lambda:guide.login('codex',self.home),lambda:guide.advance('codex',self.home)]:
+            with self.assertRaisesRegex(ValueError,'activation_confirmation_required'):action()
+        self.assertEqual(guide.step('codex',self.home)['stage'],'await_activation')
+    def test_activation_confirmation_required_and_not_authentication(self):
+        guide.choose('codex',self.home,'register')
+        with self.assertRaises(ValueError):guide.activated('codex',self.home)
+        result=guide.activated('codex',self.home,confirmed=True)
+        self.assertEqual(result['stage'],'verify');self.assertEqual(result['agent_action'],[])
+        self.assertEqual(guide.status('codex',self.home)['authentication'],'unknown')
+    def test_skip_and_resume_do_not_bypass_activation(self):
+        guide.choose('codex',self.home,'register');guide.advance('codex',self.home);guide.advance('codex',self.home)
+        guide.choose('codex',self.home,'skip')
+        self.assertEqual(guide.resume('codex',self.home)['stage'],'await_activation')
+        with self.assertRaises(ValueError):guide.login('codex',self.home)
+    def test_legacy_registration_state_still_requires_activation(self):
+        original={'prompt_seen':True,'choice':'register','stage':'register','authentication':'unknown'}
+        guide.save('codex',self.home,original)
+        result=guide.choose('codex',self.home,'connect')
+        self.assertEqual(result['stage'],'await_activation');self.assertEqual(result['agent_action'],[])
+    def test_legacy_skipped_trial_cannot_connect_before_activation(self):
+        guide.save('codex',self.home,{'prompt_seen':True,'choice':'skip','stage':'done','resume_stage':'register','authentication':'unknown'})
+        self.assertEqual(guide.choose('codex',self.home,'connect')['stage'],'await_activation')
+        with self.assertRaises(ValueError):guide.login('codex',self.home)
+    def test_pending_trial_cannot_be_marked_readable(self):
+        guide.choose('codex',self.home,'register');guide.check('codex',self.home)
+        receipt={'ok':True,'server_url':setup.ENDPOINT,'tool':'searchTopic','operation':'read','verified_at':'2026-10-14T01:00:00+08:00'}
+        with self.assertRaises(ValueError):guide.verified('codex',self.home,receipt)
     def test_corrupt_state_is_explicit_error(self):
         path=setup.state_dir(self.home,'codex')/'choice.json';path.parent.mkdir(parents=True)
         path.write_text('{}')

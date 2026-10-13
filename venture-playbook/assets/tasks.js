@@ -326,7 +326,7 @@
       try{copied=document.execCommand('copy');}catch{}
       if(copied)selection.removeAllRanges();
     }
-    notify(copied?'已复制“连接生财有术”。请回到 AI 对话粘贴并发送。':'请复制选中的“连接生财有术”，回到 AI 对话发送。');
+    notify(copied?'已复制。客服确认体验已开通后，请回到 AI 对话粘贴并发送。':'客服确认体验已开通后，请复制选中的指令，回到 AI 对话发送。');
   });
   const poster=$('referral-poster'),posterButton=$('referral-link');
   if(poster && posterButton && typeof HTMLDialogElement!=='undefined') {

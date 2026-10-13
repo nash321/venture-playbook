@@ -297,9 +297,11 @@ class ReportTests(unittest.TestCase):
         self.assertIn('整理下一步怎么做',card)
         self.assertNotIn('id="referral-cta"',card)
         self.assertNotRegex(card,r'推荐奖励|阅读权益|实际体验.*账号|注册后可连接生财资料')
-    def test_referral_explains_next_step_after_registration(self):
+    def test_referral_explains_customer_activation_before_connection(self):
         card=re.sub(r'src="data:[^"]+"','src="embedded"',v.referral_card())
-        self.assertIn('扫码后，还需要这两步',card)
+        self.assertIn('客服确认已开通',card)
+        self.assertIn('开通3天体验卡',card)
+        self.assertIn('体验已开通，连接生财有术',card)
         self.assertIn('连接生财有术',card)
         self.assertIn('id="copy-connect"',card)
         self.assertIn('登录并确认授权',card)

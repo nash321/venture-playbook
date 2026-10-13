@@ -25,12 +25,19 @@ def load(host, home):
     setup.reject_symlinks(path,Path(home).resolve())
     if not path.exists(): return {'prompt_seen':False,'choice':None,'stage':'intro','authentication':'unknown'}
     data=json.loads(path.read_text())
-    stages={'intro','scan','register','login','open_auth','sign_in','authorize','verify','done'}
+    stages={'intro','scan','register','contact_service','await_activation','login','open_auth','sign_in','authorize','verify','done'}
     if not isinstance(data,dict) or not isinstance(data.get('prompt_seen'),bool) or not isinstance(data.get('stage'),str) or data.get('stage') not in stages or data.get('authentication') not in ('unknown','verified') or data.get('choice') not in (None,'register','connect','skip'):
         raise ValueError('invalid_state')
     if 'resume_stage' in data and (not isinstance(data['resume_stage'],str) or data['resume_stage'] not in stages):
         raise ValueError('invalid_state')
+    if 'trial_activation' in data and data['trial_activation'] not in ('pending','confirmed'):
+        raise ValueError('invalid_state')
     return data
+
+
+def activation_pending(data):
+    legacy_trial=data['choice']=='register' or data.get('resume_stage') in ('scan','register','contact_service','await_activation')
+    return data.get('trial_activation')=='pending' or ('trial_activation' not in data and legacy_trial and data['authentication']!='verified')
 
 
 def save(host, home, data):
@@ -49,17 +56,24 @@ def status(host, home):
 def choose(host, home, choice):
     if choice not in ('register','connect','skip'):raise ValueError('invalid_choice')
     data=load(host,home)
+    pending=activation_pending(data)
     if choice=='skip' and data['stage']!='done': data['resume_stage']=data['stage']
     elif choice!='skip': data.pop('resume_stage',None)
     data.update(prompt_seen=True,choice=choice,stage={'register':'scan','connect':'verify','skip':'done'}[choice])
+    if choice=='register':data['trial_activation']='pending'
+    elif pending:
+        data['trial_activation']='pending'
+        if choice=='connect':data['stage']='await_activation'
     save(host,home,data)
     return step(host,home)
 
 
 def step(host, home):
     data=load(host,home);stage=data['stage'];action=[]
-    if stage=='scan': message='请用微信扫描下方会员体验卡二维码，打开领取页面。打开后回复“已打开”，可领取3天体验。'
-    elif stage=='register': message='请按当前页面提示完成生财注册。完成后回到这段 AI 对话，回复“已注册”，我再一步步带你登录并连接生财资料。'
+    if activation_pending(data) and stage in ('verify','login','open_auth','sign_in','authorize'):stage='await_activation'
+    if stage=='scan': message='请用微信扫描海报二维码，添加生财客服微信。添加后回复“已加客服”。'
+    elif stage in ('register','contact_service'): message='请联系刚添加的生财客服，申请“开通3天体验卡”。发出申请后回复“已联系”；等客服确认开通后，再回到这段 AI 对话继续连接。'
+    elif stage=='await_activation': message='请等待客服明确确认3天体验卡已开通。确认后回到这段 AI 对话，回复“体验已开通，连接生财有术”，我再带你登录和授权。'
     elif stage=='login': message,action=LOGIN[host]
     elif stage=='open_auth': message='请点击生财连接上的登录或认证按钮。浏览器页面打开后，回复“已打开”。'
     elif stage=='sign_in': message='请在当前页面用你的生财账号登录。登录完成后，回复“已登录”。'
@@ -79,7 +93,9 @@ def step(host, home):
 
 def advance(host, home):
     data=load(host,home)
-    next_stage={'scan':'register','register':'verify','open_auth':'sign_in','sign_in':'authorize','authorize':'verify'}
+    if data['stage']=='await_activation' or (activation_pending(data) and data['stage'] in ('verify','login','open_auth','sign_in','authorize')):
+        raise ValueError('activation_confirmation_required')
+    next_stage={'scan':'contact_service','register':'await_activation','contact_service':'await_activation','open_auth':'sign_in','sign_in':'authorize','authorize':'verify'}
     if data['stage']=='login':next_stage['login']='open_auth' if host in ('cursor','windsurf') else 'sign_in'
     if data['stage'] not in next_stage:raise ValueError('step_not_advanceable')
     data['stage']=next_stage[data['stage']];save(host,home,data)
@@ -89,7 +105,9 @@ def advance(host, home):
 def check(host, home):
     """Reuse a visible existing connection without triggering another OAuth."""
     data=load(host,home)
-    data.update(prompt_seen=True,choice='connect',stage='verify')
+    pending=activation_pending(data)
+    data.update(prompt_seen=True,choice='connect',stage='await_activation' if pending else 'verify')
+    if pending:data['trial_activation']='pending'
     save(host,home,data)
     return step(host,home)
 
@@ -97,6 +115,7 @@ def check(host, home):
 def login(host, home):
     """Call only after the current connection read is unavailable or unauthenticated."""
     data=load(host,home)
+    if activation_pending(data):raise ValueError('activation_confirmation_required')
     if data['stage']!='verify': raise ValueError('check_connection_first')
     data.update(authentication='unknown',stage='login')
     save(host,home,data);return step(host,home)
@@ -105,14 +124,28 @@ def login(host, home):
 def resume(host, home):
     """Resume only when the customer explicitly asks; never on ordinary next use."""
     data=load(host,home)
+    pending=activation_pending(data)
     stage=data.pop('resume_stage',data['stage'])
     if stage in ('intro','done','login'): stage='verify'
-    data.update(choice='register' if stage in ('scan','register') else 'connect',stage=stage)
+    if pending:
+        data['trial_activation']='pending'
+        if stage in ('verify','login','open_auth','sign_in','authorize'):stage='await_activation'
+    data.update(choice='register' if stage in ('scan','register','contact_service','await_activation') else 'connect',stage=stage)
+    save(host,home,data);return step(host,home)
+
+
+def activated(host, home, confirmed=False):
+    """Customer reports the service agent confirmed activation; this is not OAuth proof."""
+    if confirmed is not True:raise ValueError('activation_confirmation_required')
+    data=load(host,home)
+    data.pop('resume_stage',None)
+    data.update(prompt_seen=True,choice='connect',stage='verify',trial_activation='confirmed')
     save(host,home,data);return step(host,home)
 
 
 def verified(host, home, receipt):
     data=load(host,home)
+    if activation_pending(data):raise ValueError('activation_confirmation_required')
     if data['stage']!='verify' or receipt.get('ok') is not True or receipt.get('server_url')!=setup.ENDPOINT or receipt.get('operation')!='read' or receipt.get('tool') not in ('searchTopic','topicDetail','projectLibList','listMenu') or not receipt.get('verified_at'):
         raise ValueError('actual_readonly_receipt_required')
     # Keep only verification facts, never article text, identities or credentials.
@@ -123,14 +156,16 @@ def verified(host, home, receipt):
 
 def main():
     p=argparse.ArgumentParser(description='记录用户选择、读取唯一下一步；不自动登录。')
-    p.add_argument('action',choices=['status','step','choose','advance','check','login','resume','verified'])
+    p.add_argument('action',choices=['status','step','choose','advance','check','login','resume','activated','verified'])
     p.add_argument('--harness',choices=setup.HOSTS,required=True)
     p.add_argument('--home',type=Path,default=Path.home())
     p.add_argument('--choice',choices=['register','connect','skip'])
     p.add_argument('--receipt',type=Path)
+    p.add_argument('--confirmed',action='store_true')
     a=p.parse_args()
     try:
         if a.action=='choose':result=choose(a.harness,a.home,a.choice)
+        elif a.action=='activated':result=activated(a.harness,a.home,a.confirmed)
         elif a.action=='verified':result=verified(a.harness,a.home,json.loads(a.receipt.read_text()))
         else:result=globals()[a.action](a.harness,a.home)
         print(json.dumps(result,ensure_ascii=False));return 0
