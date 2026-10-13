@@ -297,6 +297,20 @@ class ReportTests(unittest.TestCase):
         self.assertIn('整理下一步怎么做',card)
         self.assertNotIn('id="referral-cta"',card)
         self.assertNotRegex(card,r'推荐奖励|阅读权益|实际体验.*账号|注册后可连接生财资料')
+    def test_referral_explains_next_step_after_registration(self):
+        card=re.sub(r'src="data:[^"]+"','src="embedded"',v.referral_card())
+        self.assertIn('扫码后，还需要这两步',card)
+        self.assertIn('连接生财有术',card)
+        self.assertIn('id="copy-connect"',card)
+        self.assertIn('登录并确认授权',card)
+        self.assertIn('AI 检查连接成功',card)
+    def test_scys_connection_is_optional_enhancement(self):
+        card=re.sub(r'src="data:[^"]+"','src="embedded"',v.referral_card())
+        self.assertIn('直接用',card)
+        self.assertIn('项目想法',card)
+        self.assertIn('生成报告和行动清单',card)
+        self.assertIn('加入后更强',card)
+        self.assertIn('可选增强',card)
     def test_missing_referral_card_rejected(self):
         text=self.render();self.path.write_text(re.sub(r'<section id="referral".*?</section>','',text,flags=re.S))
         self.assertFalse(v.check_html(self.path)['passed'])

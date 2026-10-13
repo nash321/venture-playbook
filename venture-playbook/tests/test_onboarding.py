@@ -109,6 +109,12 @@ class InstallTests(unittest.TestCase):
 
 
 class GuideTests(unittest.TestCase):
+    def test_registration_instruction_tells_customer_to_return_to_chat(self):
+        guide.choose('codex',self.home,'register')
+        result=guide.advance('codex',self.home)
+        self.assertIn('回到这段 AI 对话',result['instruction'])
+        self.assertIn('已注册',result['instruction'])
+        self.assertEqual(result['agent_action'],[])
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(dir=ROOT.parent/'temp')
         self.home=Path(self.temp.name)

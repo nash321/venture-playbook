@@ -318,6 +318,16 @@
     const observer=new IntersectionObserver(entries=>{for(const item of entries)if(item.isIntersecting)for(const n of document.querySelectorAll('.nav-links a'))n.classList.toggle('active',n.getAttribute('href')==='#'+item.target.id);},{rootMargin:'-10% 0px -68% 0px'});
     for(const section of document.querySelectorAll('main>section[id]'))observer.observe(section);
   }
+  $('copy-connect')?.addEventListener('click',async()=>{
+    const command=$('connect-command');
+    let copied=false;
+    try{await navigator.clipboard.writeText(command.textContent);copied=true;}catch{
+      const range=document.createRange(),selection=getSelection();range.selectNodeContents(command);selection.removeAllRanges();selection.addRange(range);
+      try{copied=document.execCommand('copy');}catch{}
+      if(copied)selection.removeAllRanges();
+    }
+    notify(copied?'已复制“连接生财有术”。请回到 AI 对话粘贴并发送。':'请复制选中的“连接生财有术”，回到 AI 对话发送。');
+  });
   const poster=$('referral-poster'),posterButton=$('referral-link');
   if(poster && posterButton && typeof HTMLDialogElement!=='undefined') {
     let preview=$('poster-dialog');

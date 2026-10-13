@@ -59,7 +59,7 @@ def choose(host, home, choice):
 def step(host, home):
     data=load(host,home);stage=data['stage'];action=[]
     if stage=='scan': message='请用微信扫描下方会员体验卡二维码，打开领取页面。打开后回复“已打开”，可领取3天体验。'
-    elif stage=='register': message='请按当前页面提示完成生财注册。完成后回复“已注册”，我再带你连接生财资料。'
+    elif stage=='register': message='请按当前页面提示完成生财注册。完成后回到这段 AI 对话，回复“已注册”，我再一步步带你登录并连接生财资料。'
     elif stage=='login': message,action=LOGIN[host]
     elif stage=='open_auth': message='请点击生财连接上的登录或认证按钮。浏览器页面打开后，回复“已打开”。'
     elif stage=='sign_in': message='请在当前页面用你的生财账号登录。登录完成后，回复“已登录”。'
