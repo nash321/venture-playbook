@@ -55,6 +55,13 @@ def run(args):
         passed('键盘下移保留焦点和内容',rows.nth(1).get_attribute('data-task-id')==initial_order[0] and page.evaluate('document.activeElement.getAttribute("aria-label").startsWith("下移")'))
         page.locator('#undo').click()
         passed('手动顺序可以撤销',rows.evaluate_all('(els)=>els.map(e=>e.dataset.taskId)')==initial_order)
+        passed('首尾移动按钮不会越界',rows.first.locator('[data-move="-1"]').is_disabled() and rows.last.locator('[data-move="1"]').is_disabled())
+        page.locator('#search').fill(rows.first.locator('h4').inner_text())
+        passed('筛选时不能手动移动',all(button.is_disabled() for button in rows.locator('[data-move]').all()))
+        page.locator('#reset-filters').click();page.locator('#sort-filter').select_option('due')
+        passed('日期排序时不能手动移动',all(button.is_disabled() for button in rows.locator('[data-move]').all()))
+        page.locator('#reset-filters').click();rows.first.locator('[data-move="1"]').click()
+        manual_order=rows.evaluate_all('(els)=>els.map(e=>e.dataset.taskId)')
         # The shipped demo deliberately provides dependencies T02 -> T01.
         t1=page.locator('[data-task-id="T01"]');t2=page.locator('[data-task-id="T02"]')
         t2.locator('input.task-check').click()
@@ -104,9 +111,14 @@ def run(args):
         backup_path=out/'backup.json';dl.value.save_as(backup_path)
         backup=json.loads(backup_path.read_text('utf-8'))
         passed('真实JSON下载保留当前任务与状态',backup['selected_state']=='S1' and any(t['id']==new_id for t in backup['tasks']))
+        passed('JSON备份保留手动顺序',[t['id'] for t in backup['tasks'][:count]]==manual_order)
         with page.expect_download() as dl:page.locator('#export-csv').click()
         csv_path=out/'tasks.csv';dl.value.save_as(csv_path)
         passed('真实CSV下载含已编辑内容','已编辑的独立行动' in csv_path.read_text('utf-8-sig'))
+        import csv
+        with csv_path.open(encoding='utf-8-sig',newline='') as csv_file:
+            csv_ids=[row['id'] for row in csv.DictReader(csv_file)]
+        passed('CSV导出保留手动顺序',csv_ids[:count]==manual_order)
         with page.expect_download() as dl:page.locator('[data-save-html]').first.click()
         html_path=out/'saved-report.html';dl.value.save_as(html_path)
         saved=html_path.read_text('utf-8')
@@ -116,7 +128,38 @@ def run(args):
         restored=ctx.new_page();restored.set_content(saved,wait_until='load');restored.wait_for_selector('html.enhanced')
         passed('导出的完整HTML可重新执行交互',restored.locator('#task-list .task-row').count()==count+1)
         passed('导出的勾选与备注真正保留',restored.locator('[data-task-id="T01"] input.task-check').is_checked() and restored.locator('[data-task-id="'+new_id+'"] .task-details').text_content().find('onerror')>=0)
+        passed('保存并重开HTML保留手动顺序',restored.locator('#task-list .task-row').evaluate_all('(els)=>els.map(e=>e.dataset.taskId)')[:count]==manual_order)
         restored.close()
+        if reading_guide.count():
+            edge=ctx.new_page();edge.on('pageerror',lambda e:errors.append(str(e)));edge.set_content(content,wait_until='load');edge.wait_for_selector('html.enhanced')
+            payload=json.loads(edge.locator('#vp-data').text_content())
+            example_id=edge.locator('#action-example-note').get_attribute('data-example-task-id')
+            original_state=edge.locator('#state-select').input_value()
+            remaining=[t for t in payload['tasks'] if t['id']!=example_id]
+            for task in remaining:task['depends_on']=[dep for dep in task['depends_on'] if dep!=example_id]
+            changed={'schema_version':1,'report_id':payload['report_id'],'tasks':remaining,'selected_state':'S1'}
+            edge.locator('#import-file').set_input_files({'name':'removed-example.json','mimeType':'application/json','buffer':json.dumps(changed).encode()});edge.locator('#confirm-yes').click()
+            passed('导入删除任务的备份后示例明确标记',edge.locator('[data-task-id="'+example_id+'"].task-row').count()==0 and '已从当前计划删除' in edge.locator('#action-example-note').inner_text())
+            edge.locator('#action-example').scroll_into_view_if_needed();edge.screenshot(path=str(out/'desktop-deleted-example.png'))
+            with edge.expect_download() as dl:edge.locator('[data-save-html]').first.click()
+            removed_path=out/'removed-example-saved.html';dl.value.save_as(removed_path)
+            removed_html=removed_path.read_text('utf-8')
+            removed_page=ctx.new_page();removed_page.set_content(removed_html,wait_until='load');removed_page.wait_for_selector('html.enhanced')
+            passed('任务删除后的保存副本保留正确说明',removed_page.locator('[data-task-id="'+example_id+'"].task-row').count()==0 and '已从当前计划删除' in removed_page.locator('#action-example-note').inner_text())
+            removed_page.close();edge.locator('#undo').click()
+            passed('撤销导入同时恢复任务和示例说明',edge.locator('[data-task-id="'+example_id+'"].task-row').count()==1 and '已从当前计划删除' not in edge.locator('#action-example-note').inner_text())
+            with edge.expect_download() as dl:edge.locator('#backup-tasks').click()
+            undo_backup_path=out/'undo-backup.json';dl.value.save_as(undo_backup_path)
+            undo_backup=json.loads(undo_backup_path.read_text('utf-8'))
+            passed('撤销导入后阶段显示和保存值一致',edge.locator('#state-select').input_value()==original_state==undo_backup['selected_state'])
+            # Remove the example task directly after detaching its dependents.
+            remaining=[{**t,'depends_on':[dep for dep in t['depends_on'] if dep!=example_id]} for t in payload['tasks']]
+            changed['tasks']=remaining;edge.locator('#import-file').set_input_files({'name':'detached-dependencies.json','mimeType':'application/json','buffer':json.dumps(changed).encode()});edge.locator('#confirm-yes').click()
+            edge.locator('[data-task-id="'+example_id+'"].task-row button[aria-label^="删除"]').click();edge.locator('#confirm-yes').click()
+            passed('直接删除示例任务后说明随清单更新','已从当前计划删除' in edge.locator('#action-example-note').inner_text())
+            edge.locator('#undo').click()
+            passed('撤销直接删除后示例说明恢复','已从当前计划删除' not in edge.locator('#action-example-note').inner_text())
+            edge.close()
         # Wrong-project and malformed imports cannot replace existing work.
         before=rows.count();wrong={**backup,'report_id':'another-project'}
         page.locator('#import-file').set_input_files({'name':'wrong.json','mimeType':'application/json','buffer':json.dumps(wrong).encode()})
@@ -127,6 +170,7 @@ def run(args):
         new.locator('button[aria-label^="删除"]').click();page.locator('#confirm-yes').click()
         page.locator('#import-file').set_input_files(str(backup_path));page.locator('#confirm-yes').click()
         passed('JSON备份恢复增删改与状态',rows.count()==count+1 and page.locator('#state-select').input_value()=='S1')
+        passed('JSON备份恢复手动顺序',rows.evaluate_all('(els)=>els.map(e=>e.dataset.taskId)')[:count]==manual_order)
         page.locator('#search').fill('独立行动')
         page.evaluate("window.dispatchEvent(new Event('beforeprint'))")
         passed('打印包含所有任务而非仅筛选结果',rows.count()==count+1)
@@ -152,6 +196,7 @@ def run(args):
         touch_move=mobile_rows.first.locator('button[aria-label^="下移"]');box=touch_move.bounding_box()
         touch_move.tap()
         passed('手机触摸下移与44像素按钮',mobile_rows.nth(1).get_attribute('data-task-id')==mobile_first and box['width']>=44 and box['height']>=44)
+        mobile_rows.nth(1).scroll_into_view_if_needed();mp.screenshot(path=str(out/'mobile-sort.png'))
         mp.locator('#add-task').click();mp.locator('#task-form [name="title"]').fill('手机编辑可用')
         passed('手机编辑弹窗可见且接受输入',mp.locator('#task-dialog').is_visible() and mp.locator('#task-form [name="title"]').input_value()=='手机编辑可用')
         mp.screenshot(path=str(out/'mobile-editor.png'));mp.locator('#editor-cancel').click()
@@ -160,6 +205,9 @@ def run(args):
         sp=static_ctx.new_page();sp.set_content(saved,wait_until='load')
         passed('禁用脚本仍能读正文与全部已修改待办',sp.locator('#source').inner_text()==original_source and sp.locator('#task-list .task-row').count()==count+1)
         passed('禁用脚本保留勾选记录',sp.locator('[data-task-id="T01"] input.task-check').is_checked())
+        if reading_guide.count():
+            static_removed=static_ctx.new_page();static_removed.set_content(removed_html,wait_until='load')
+            passed('禁用脚本时保存副本仍显示任务已删除',static_removed.locator('[data-task-id="'+example_id+'"].task-row').count()==0 and '已从当前计划删除' in static_removed.locator('#action-example-note').inner_text())
         passed('没有相关浏览器错误',not errors)
         passed('没有运行期外部请求',not requests)
         browser.close()

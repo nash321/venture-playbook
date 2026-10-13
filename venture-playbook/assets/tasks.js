@@ -112,7 +112,7 @@
   }
   function undo() {
     if(!history.length) return;
-    state=history.pop();persist();render();$('undo').disabled=!history.length;notify('已撤销上一步。');
+    state=history.pop();persist();render();showState();$('undo').disabled=!history.length;notify('已撤销上一步。');
   }
   function unfinished(t) {return t.depends_on.filter(id=>state.tasks.find(v=>v.id===id)?.status!=='done');}
   function changeStatus(id,status) {
@@ -175,6 +175,13 @@
   function options(select,values,first) {
     const old=select.value;select.replaceChildren(el('option',{value:''},first));for(const v of values) select.append(el('option',{value:v},v));select.value=values.includes(old)?old:'';
   }
+  function updateExampleNote() {
+    const note=$('action-example-note');if(!note) return;
+    const id=note.dataset.exampleTaskId,present=state.tasks.some(t=>t.id===id);
+    note.textContent='这是本报告补充的说明示例，不是作者经历或已执行结果。'+(present?
+      '对应行动：'+id+'；完整输入、产物与停止条件仍在清单中。':
+      '原对应行动 '+id+' 已从当前计划删除；示例保留供理解原计划，不代表需要恢复执行。');
+  }
   function render() {
     options($('phase-filter'),[...new Set(state.tasks.map(t=>t.phase))],'所有阶段');
     const q=$('search').value.trim().toLocaleLowerCase(),phase=$('phase-filter').value,status=$('status-filter').value,sort=$('sort-filter').value;
@@ -187,6 +194,7 @@
     $('order-hint').textContent=manualOrder()?'用每项右侧的上下箭头调整顺序，可以撤销。':'调整顺序：先清除筛选，再切回“我的顺序”。';
     $('undo').disabled=!history.length;
     const dl=$('phase-options');dl.replaceChildren(...[...new Set(state.tasks.map(t=>t.phase))].map(v=>el('option',{value:v})));
+    updateExampleNote();
   }
   function newId() {return 'u-'+(globalThis.crypto?.randomUUID?crypto.randomUUID().replaceAll('-',''):Date.now().toString(36)+Math.random().toString(36).slice(2));}
   function openEditor(id=null) {

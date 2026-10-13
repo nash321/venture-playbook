@@ -36,7 +36,7 @@ reading_guide.overview为白话导读；terms为对象数组，每项有term、e
 
 只增补阅读说明、不改变任务与状态时，修订旧HTML应先读取vp-data中的revision并在project.json显式保留；不能让新导读造成客户已有记录失联。真实读者回答和成绩不由此字段或编译器生成。
 
-客户从备份删除示例对应任务后，merge-tasks保留原示例，标记first_action.removed_from_plan=true；页面明确该行动已删除，不重新添加任务。恢复该任务后标记移除。此标记记录客户计划变化，不表示执行完成。
+客户从备份删除示例对应任务后，merge-tasks保留原示例，标记first_action.removed_from_plan=true；页面明确该行动已删除，不重新添加任务。恢复该任务后标记移除。浏览器直接删除、导入、撤销或恢复本地记录时，示例说明也跟随当前清单更新；保存HTML保留对应说明。此标记记录客户计划变化，不表示执行完成。
 
 任务必需：id、title、action、deliverable、acceptance、on_failure。其他文字字段：phase、day、due（真实YYYY-MM-DD或空）、owner、priority（high/normal/low）、status（todo/doing/done/blocked）、estimate、cost、inputs、tool、notes。depends_on为已有任务ID数组。时间、费用都是文字口径，不由脚本生成商业数字。默认Agent应填清关键字段，不能靠结构最小值降低行动质量。
 
