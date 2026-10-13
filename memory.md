@@ -7,7 +7,7 @@
 
 ## 当前可验证状态
 
-- 本轮修复代码已本地提交c0b71c14d44360d7d182507718389ae0b768d11d，尚未推送远端，旧GitHub草稿PR未包含此提交；不把本地修正冒称远端同步或正式发布。
+- 用户要求仓库链接以拉回本地测试后，9.1.2修复源码c0b71c14d44360d7d182507718389ae0b768d11d及记录提交0f06f613bee3ee74b5f45f15ec3f9bf05cac3276已推到GitHub的codex/9.1.2-reading-guide，远端SHA回读一致；草稿PR已随分支更新。Gitee私仓读取仍缺认证（exit128），未同步，不能称双仓完成。供本地测试的入口为https://github.com/nash321/venture-playbook/tree/codex/9.1.2-reading-guide；没有发布正式版本。
 
 - 2026-10-13 17:31，按用户要求完成9.1.2代码和功能复查，修复任务删除后示例说明不更新、撤销导入后阶段显示与保存值不一致两处遗漏。101项单元、冻结96项旧测试、示例/FDE各58项浏览器检查及8项模拟存储检查通过。当前候选包在temp/review-9.1.2/venture-playbook-v9.1.2-candidate.zip，SHA256为8ad4b8efe1d273e1c62f5096a134e2fea2885704eb380b7fa350b0d5641cc755；与33项源码及manifest共34项一致。示例/FDE已重编，原正文、任务payload/revision、原海报及页底位置保留。隔离Codex脚本安装与编译通过，不代表实际客户宿主全流程。未发布、全局激活、登录、远端推送或独立网页复核。旧readability-upgrade候选包及其44项记录留作历史，不是当前交付；最新回执见temp/review-9.1.2/acceptance-summary.json。
 

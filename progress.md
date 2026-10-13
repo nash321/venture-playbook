@@ -50,7 +50,7 @@
 - 从新ZIP解压后，在隔离Codex用户目录执行安装、重复安装、doctor、编译和检查通过；安装文件逐项一致，生成HTML与实际浏览器测试输入相同。仅验证本地脚本，不冒称实际Codex客户端、客户设备或OAuth验收。
 - 回执：temp/review-9.1.2/acceptance-summary.json、package-verified.json、fidelity-final.json及browser-demo-final/browser-results.json、browser-fde-final/browser-results.json。Browser插件未提供，使用已有Playwright；仍为--markup。通用服务验收参考资源读取失败且无可核验本地checkout，按实际项目规则完成检查，没有虚构参考内容。
 - 本轮核证发现：先前把真实读者理解测试与发布收尾统称硬性发布门槛不准确。读者测试未执行应如实记录；Gitee同步属于仓库收尾。实际目标宿主完整使用检查仍需进行。本轮无发布、全局激活、登录或远端推送。
-- 修复源码、示例/FDE报告、manifest和回归测试已本地提交c0b71c14d44360d7d182507718389ae0b768d11d；没有推送远端，当前GitHub草稿PR尚未包含此次修复。项目沟通偏好及最新进度另行提交保存。
+- 修复源码、示例/FDE报告、manifest和回归测试已本地提交c0b71c14d44360d7d182507718389ae0b768d11d；17:31复查结束时尚未推送。随后用户要求拉回本地测试，修复及记录提交0f06f613bee3ee74b5f45f15ec3f9bf05cac3276已推到GitHub的codex/9.1.2-reading-guide，远端SHA读回一致。Gitee本轮只读访问仍因缺认证退出128，没有同步；不记为双仓完成。master和正式标签未变，未发布。后续拉取该GitHub测试分支，不使用旧Gitee分支作为当前候选。
 
 - 16:20发布就绪核证：已读项目规则、memory、progress、正式Skill、客户说明和现有验收回执。当前9.1.2源码manifest的33项文件与候选ZIP逐文件一致，ZIP完整性通过、无额外成员，包SHA256仍为8fb945cf452dfc940825aa4380265a5d958e56cb2e796d3cb35a708ef80679e3；示例及FDE报告当前结构/可信代码检查通过。101项单元、冻结96项及两份各44项浏览器结果为已回读的现有验收，没有重跑或冒称新增端到端验收。正式标签仍止于9.1.1；9.1.2复核出口、真实读者理解验收及正式发布未完成。此次仅核证状态，未安装、登录、同步或发布。
 - 基线：Python3.12.14；96项既有单元测试通过，示例doctor/validate/build/check及FDE数据/HTML结构通过。浏览器已有37项检查通过。
@@ -114,4 +114,4 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 
 ## 9. 最后更新时间
 
-2026-10-13T17:40:24+08:00（Asia/Shanghai）。
+2026-10-13T18:06:22+08:00（Asia/Shanghai）。
