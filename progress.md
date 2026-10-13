@@ -6,7 +6,7 @@
 
 ## 2. 当前阶段
 
-9.1.2理解难度增补完成，云端开发与功能验收通过，候选待提交复核；未全局激活、建立正式标签或发布。双远端同步、9.1.1全局安装及旧浏览器file实测为历史开发机记录，不能当作云端或客户设备本轮验收。
+9.1.2理解难度增补完成，云端开发与功能验收通过，已提交GitHub审阅分支，候选待复核；未全局激活、建立正式标签或发布。双远端同步、9.1.1全局安装及旧浏览器file实测为历史开发机记录，不能当作云端或客户设备本轮验收。
 
 ## 3. 已完成事项
 
@@ -37,7 +37,7 @@
 
 ## 4. 正在进行
 
-准备把已验收的改动提交到独立审阅分支；GitHub代码读取可用，但GitHub API和Gitee被云端网络代理拒绝。未将单端读写冒称双端同步，未把代码提交冒称新版Skill发布。
+代码提交b817d73已推送到GitHub分支codex/9.1.2-reading-guide，原生Git远端读回与本地SHA一致；master和9.1.1正式标签未修改。审阅差异：https://github.com/nash321/venture-playbook/compare/master...codex/9.1.2-reading-guide 。GitHub API和Gitee仍被云端网络代理拒绝，尚未创建PR或同步Gitee；未将单端读写冒称双端同步，未把代码提交冒称新版Skill发布。回执：temp/readability-upgrade/github-review-branch.json；汇总：temp/readability-upgrade/acceptance-summary.json。
 
 ### 本轮云端验收（2026-10-13）
 
@@ -93,8 +93,8 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 
 ## 8. 下一步动作
 
-提交并读回GitHub审阅分支；网络配置应用后创建PR并核对Gitee可用权限，双端同步分别留证。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
+复核已推送的GitHub审阅分支；在环境设置保存并发布已存草稿，api.github.com/gitee.com配置应用后再试PR与Gitee只读访问。确认Gitee授权可用后分别同步留证，不直接索要Token。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
 
 ## 9. 最后更新时间
 
-2026-10-13T13:27:05+08:00（Asia/Shanghai）。
+2026-10-13T13:30:19+08:00（Asia/Shanghai）。
