@@ -46,7 +46,7 @@
 - 回读：两份项目原有顶层研究字段逐项相等；FDE22章、8项待办、完整vp-data与revision保留，页底原JPEG字节、链接和位置不变。只新增reading_guide与显式revision，research_status仍partial。证据：temp/readability-upgrade/fidelity.json。
 - 当前测试：101项单元测试通过；同一套冻结96项旧测试与旧输入在新编译器上通过。两份报告各44项沙箱Chromium检查通过，覆盖1440×1000桌面与390×844触摸、自检展开、排序/撤销、CRUD、完整HTML下载恢复、无脚本阅读、无相关控制台错误及运行期外部请求。
 - 候选包：白名单33项文件加manifest共34项，ZIP完整性与逐文件SHA256回读通过。在云端隔离Cursor目录实际安装、重复配置、使用已安装生成器编译与结构检查通过；这是隔离脚本验收，没有客户设备或Cursor界面验收。候选ZIP与全部过程文件留temp/readability-upgrade/，不入Git。
-- 环境配置：start_skill与network.allowed_domains的api.github.com、gitee.com、mcp.scys.com已确认保存到草稿；Python/Playwright/Chromium已提供，无需install_script或新增凭据。草稿不等于运行时应用或发布；需在环境设置审阅、保存并发布。
+- 环境配置：用户已发布环境，恢复后的运行修订为3，start_skill与api.github.com、gitee.com、mcp.scys.com三个网络域名已进入发布配置，自定义网络域名已在当前实例生效。Python/Playwright/Chromium已提供，离线开发无需install_script或凭据；发布不等于Gitee密钥绑定或生财OAuth完成。
 
 | 验收对象 | 本轮状态 | 边界 |
 |---|---|---|
@@ -58,7 +58,7 @@
 | 生财原文/原图片再核验、扫码权益 | 未执行 | 原材料和可调用生财工具缺失 |
 | 真实读者理解测试 | 未执行 | 自检题与功能通过不能代替真实读者回答 |
 
-- Gitee凭据后续：用户截图显示gitee_token，已确认该名称的user_provided要求与gitee.com目标保存成功；当前has_saved_binding=false、实际进程变量不存在，不能记作私仓授权通过。回执：temp/readability-upgrade/gitee-binding-status.json。
+- Gitee凭据后续：用户截图显示gitee_token，同名user_provided要求与gitee.com目标已进入发布配置。发布恢复后再次确认has_saved_binding=false，实例secrets/runtime_variables为空，gitee、gitee_token、GITEE_TOKEN均未注入；实际私仓ls-remote仍要求Username（exit128）。缺口是密钥值绑定，单独再次发布不能证明或补齐该绑定。现有工具没有绑定密钥或应用/发布接口；需通过变量编辑项绑定用户已有Token，不向聊天索要值。回执：temp/readability-upgrade/gitee-binding-status.json及gitee-published-status.json。
 
 ### 本轮避坑与恢复
 
@@ -73,7 +73,7 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 ## 6. 阻塞/风险
 
 - 当前云端没有可调用的网页ChatGPT协同工具，9.1.2复核出口未闭合；旧FAST_TASKSPACE_BUSY为历史开发机原因，本轮不能确认仍有占用，不清理其他项目。上轮9.1.1省略授权不扩大到9.1.2。
-- 最新实际探测：GitHub REST私仓认证及草稿PR创建通过，Gitee首页HTTP200；用户已提供gitee_token，但当前草稿尚无保存绑定、运行实例未注入，因此私仓Git读取认证仍未完成；用户追加联网授权后，生财GET及真实JSON-RPC initialize均返回401/Bearer认证挑战，OAuth资源元数据与授权服务器元数据返回200，网络已到达服务；本人OAuth尚未完成，当前会话无生财工具，云端配置未发现连接。当前只通过隔离配置及传输/认证发现检查，未完成真实工具读取。草稿已补齐上述三个域名，运行时配置元数据仍未显示自定义域名；以各项实际操作为证，不以元数据或网页200替代授权。回执：temp/readability-upgrade/network-mcp-followup.json（上一轮）及network-mcp-authorized.json（最新）。
+- 最新实际探测：GitHub REST私仓认证及草稿PR创建通过，Gitee首页HTTP200；用户已提供gitee_token并发布环境，但发布配置has_saved_binding仍为false、实例没有密钥绑定或变量，发布后私仓ls-remote仍因需要Username退出128，因此私仓认证及双端同步未完成。三个自定义网络域名已在运行修订3生效。用户追加联网授权后的生财GET及真实JSON-RPC initialize均返回401/Bearer认证挑战，OAuth资源元数据与授权服务器元数据返回200，网络已到达服务；本人OAuth尚未完成，当前会话无生财工具，云端配置未发现连接。当前只通过隔离配置及传输/认证发现检查，未完成真实工具读取；不以环境发布、元数据或网页200替代授权。回执：temp/readability-upgrade/network-mcp-authorized.json及gitee-published-status.json。
 - Git checkout没有原始付费材料、原文图片或旧temp回执，当前也没有可调用生财工具；只能确认本轮未丢既有报告信息，不能重新证明原文无遗漏。
 
 - 9.1.1上一轮网页复核已按明确授权省略；其SDK历史TIMEOUT和已修建议保持原记录。本轮9.1.2尚未取得复核或省略授权，不混同两轮状态。
@@ -96,8 +96,8 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 
 ## 8. 下一步动作
 
-复核草稿PR https://github.com/nash321/venture-playbook/pull/1；生财网络已通，下一步需在实际宿主接入生财连接并由本人完成OAuth；会话出现可调用工具后运行真实只读检查，不把匿名initialize的401记成成功读取。用户已提供名为gitee_token的环境变量截图，已按现有名称保存user_provided凭据要求，目标为gitee.com；后台has_saved_binding=false且当前进程未注入。下一步在环境设置使用已提供值保存/发布当前绑定，随后验证私仓只读访问并同步；不重复索要Token。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
+复核草稿PR https://github.com/nash321/venture-playbook/pull/1；生财网络已通，下一步需在实际宿主接入生财连接并由本人完成OAuth；会话出现可调用工具后运行真实只读检查，不把匿名initialize的401记成成功读取。云环境已发布、网络已生效；Gitee要求已发布但尚未关联密钥值，实际私仓读取仍失败。下一步通过gitee_token编辑项绑定用户已有Token，收到设置生效证据后重试私仓只读访问并同步；不重复索要聊天中的Token，不把再次发布当作绑定的替代。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
 
 ## 9. 最后更新时间
 
-2026-10-13T15:02:45+08:00（Asia/Shanghai）。
+2026-10-13T15:19:21+08:00（Asia/Shanghai）。
