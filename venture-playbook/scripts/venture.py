@@ -293,7 +293,7 @@ def poster_uri():
 
 
 def referral_card():
-    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><h2 id="referral-title">让AI陪你拆解更多赚钱项目</h2><p>想看看真实项目怎么起步、获客和交付？扫描下方会员体验卡二维码，领取生财有术<strong>3天体验</strong>。</p><a id="referral-link" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer" aria-label="打开作者的生财有术分享入口"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="lazy"></a><p class="small-copy">注册后可连接生财资料，让AI读取你有权访问的文章，结合全网信息分析项目并制定行动计划。暂不加入，也可以继续用全网资料研究。</p><p class="small-copy">这是作者的分享入口，作者可能获得推荐奖励；实际体验和阅读权益以生财账号为准。</p></section>'
+    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><div class="referral-copy"><span class="referral-label">生财有术 · 会员体验卡</span><h2 id="referral-title"><span>让AI陪你拆解</span><span>更多赚钱项目</span></h2><p>扫码或点击领取生财有术<strong>3天体验</strong>，看看真实项目怎样起步、获客和交付。</p><div class="referral-actions"><a id="referral-cta" class="btn primary" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer">领取3天体验 <span aria-hidden="true">↗</span></a><a class="btn quiet" href="#overview">先看报告 <span aria-hidden="true">↓</span></a></div><p class="small-copy">注册后可连接生财资料，让AI读取你有权访问的文章，结合全网信息分析项目。暂不加入，也可以继续阅读本报告。</p><p class="small-copy">这是作者的分享入口，作者可能获得推荐奖励；实际体验和阅读权益以生财账号为准。</p></div><a id="referral-link" class="referral-poster-link" href="'+REFERRAL_URL+'" target="_blank" rel="noopener noreferrer" aria-label="打开作者的生财有术分享入口"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="eager"><span class="referral-caption">扫码或点击图卡领取</span></a></section>'
 
 
 def render(data):
@@ -311,6 +311,7 @@ def render(data):
     doc=['<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="report-id" content="'+esc(rid)+'"><meta name="research-status" content="'+esc(d['research_status'])+'"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>'+esc(d['title'])+' · '+esc(brand['name'])+'</title><style id="vp-style">'+css+'</style></head><body>']
     doc.append('<a class="skip-link" href="#overview">跳到报告正文</a><aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">'+esc(brand['mark'])+'</span>'+esc(brand['name'])+'</a><div class="brand-sub">'+esc(brand['english_name'])+'</div><p class="nav-caption">报告导航</p><nav class="nav-links" aria-label="报告目录">'+''.join(f'<a href="#{i}"><span>{n}</span>{label}</a>' for i,n,label in nav)+'</nav><div class="sidebar-foot"><p>'+esc(brand['tagline'])+'</p><p>本地文件 · 无账户 · 无追踪</p></div></aside><div class="shell"><div class="topbar"><span>'+esc(d.get('generated_on','日期未填写'))+' · '+esc(d.get('edition','研究与执行版'))+'</span><a href="#sources">查看研究边界</a></div><main>')
     doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入行动工作台 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>原文、公开证据与建议分别标记</span><span>待办可编辑，可离线保留</span></div></header>')
+    doc.append(referral_card())
     verdict=d['verdict'];project=d.get('project',{})
     doc.append('<section id="overview">')
     guide=d.get('reading_guide')
@@ -380,7 +381,7 @@ def render(data):
             target='chapter-'+check['section_id'] if check.get('section_id') else 'overview'
             doc.append('<details class="case-detail"><summary>'+esc(check['question'])+'</summary><div class="case-body"><div>'+p(check['answer'])+'<a href="#'+esc(target)+'">回到相关章节核对</a></div></div></details>')
         doc.append('</div>')
-    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer>'+referral_card()+'</main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
+    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer></main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
     return ''.join(doc)
 
 
@@ -428,7 +429,7 @@ def check_html(path):
     if len(inv.ids)!=len(set(inv.ids)):errors.append('DOM编号重复。')
     if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
     if inv.referral_link.get('href')!=REFERRAL_URL:errors.append('缺少作者固定分享入口或链接已被替换。')
-    if referral_card()+'</main>' not in text:errors.append('完整分享图卡必须位于正文最底部。')
+    if '</header>'+referral_card()+'<section id="overview">' not in text:errors.append('完整分享图卡必须位于标题后、决策速览前。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)
     if inv.scripts.get('vp-runtime','')!=(ROOT/'assets/tasks.js').read_text('utf-8'):errors.append('交互脚本与受信任内置版本不一致。')

@@ -2,7 +2,7 @@
 name: venture-playbook
 description: 把创业文章、经营复盘、项目链接或想法，变成原文主导的精美HTML研究报告与可编辑行动工作台。用于分析生财或其他创业项目、判断能否复制、公开网络同类比较、制定有时间安排的ToDo及状态决策；也处理本Skill安装、会员体验卡、连接生财资料和逐步登录引导。生财资料可选，不使用生财仍可用全网资料分析。不要用于保证收益或代替用户开展真实经营。
 metadata:
-  version: "9.1.4"
+  version: "9.1.5"
   language: "zh-CN"
   distribution: "portable-customer-edition"
   compatibility: "Python 3.10+；Codex默认配置需Python 3.11+；完整研究需公开搜索与阅读，登录使用宿主官方机制。"
@@ -40,7 +40,7 @@ metadata:
 - `S3`：仅 `show_intro=true` 时读 [ONBOARDING.md](references/ONBOARDING.md)，展示其介绍及 `poster_path` 指向的**原始会员体验卡海报**，提示扫描卡片二维码、领取**3天体验**。客户只选“领取会员体验卡 / 连接生财资料 / 直接分析项目”。用 `choose` 立即记录选择；图卡只使用包内原图与固定分享入口，不能换成别人的注册链接。没有答复时用 `choose skip` 记录后进入R0，不在后续主动反复营销。
 - `G1`：读 [ONBOARDING.md](references/ONBOARDING.md) 的登录节点，脚本 `step` 每次只返回一个客户动作。**一次只给一个步骤，等待客户完成或说明卡点后再 `advance`**；不能一次贴完整教程。客户注册完成后自动衔接登录。脚本的配置成功或客户说“已授权”都不等于实际可读：用一个真实只读生财工具检查后才登记 `verified`。中途跳过即记录并继续R0，后续仅客户主动提起时恢复。
 - `R0`：先按研究起手确认条件，再执行下文A—E的原文读取、公开比较、判断和行动计划；已授权用本人权限内生财正文加全网，未授权或跳过只用全网；无网络且主体原文已有则标 `source_only`，原文不足则标 `partial` 并补必要材料。历史核验不替代本会话只读检查，安装不触发注册、付款或社区写操作。
-- `C1`：复用本轮doctor成功回执，执行F的 `validate → build → check`，使用内置模板、原图页底和可信交互；依赖/数据/渲染失败分别只修对应项。修订先按 [UPDATE-AND-RECOVERY.md](references/UPDATE-AND-RECOVERY.md) 保留客户待办，不能覆盖原始输入。
+- `C1`：复用本轮doctor成功回执，执行F的 `validate → build → check`，使用内置模板、开头原图分享区和可信交互；依赖/数据/渲染失败分别只修对应项。修订先按 [UPDATE-AND-RECOVERY.md](references/UPDATE-AND-RECOVERY.md) 保留客户待办，不能覆盖原始输入。
 - `E0`：按G自动在客户可见的真实浏览器打开HTML，再按 [HTML-UX.md](references/HTML-UX.md) 实测显示、待办编辑和保存重开，交付真实HTML路径并保留报告页；无法打开时按G明确兜底，失败不称已验收。
 
 配置或状态写入失败时保留原文件，报告具体缺口；不用生财的研究仍进入R0。不能持久记忆时只说明当前限制，不重复发起营销或谎报安装/登录成功。
@@ -125,7 +125,7 @@ python /实际Skill路径/scripts/venture.py build ./project.json --out ./report
 python /实际Skill路径/scripts/venture.py check ./report.html
 ```
 
-每份报告最底部必须由编译器嵌入包内原始会员体验卡与作者固定分享入口，提示扫码领取3天体验。图片直接内嵌，离线、转发及“保存完整报告”后均保留。图卡为静态展示，不重新触发首次提示或登录引导。
+每份报告必须在开头、标题介绍后及决策速览前，由编译器嵌入包内原始会员体验卡与作者固定分享入口，提供清晰的“领取3天体验”按钮及“先看报告”入口；结尾不再重复分享区。桌面文字与完整原图左右排列，手机缩小图卡但不裁切。图片直接内嵌，离线、转发及“保存完整报告”后均保留。图卡为静态展示，不重新触发首次提示或登录引导。
 
 首次不覆盖已有文件；修改时明确 `--force`。不要让模型每次重写CSS、任务CRUD或安全逻辑。结构失败就修数据；研究未完用 `partial`，不把状态改成complete来绕过校验。
 

@@ -280,15 +280,16 @@ class ReportTests(unittest.TestCase):
     def test_external_resource_rejected(self):
         text=self.render();self.path.write_text(text.replace('</body>','<img src="https://example.com/x.png"></body>'))
         self.assertFalse(v.check_html(self.path)['passed'])
-    def test_original_referral_poster_embedded_at_bottom(self):
-        text=self.render();card=re.search(r'<section id="referral"[^>]*>(.*?)</section>\s*</main>',text,re.S)
-        self.assertIsNotNone(card,'每份报告须在正文最底部保留分享卡片')
+    def test_original_referral_poster_embedded_at_start(self):
+        text=self.render();card=re.search(r'</header>(<section id="referral"[^>]*>.*?)</section><section id="overview">',text,re.S)
+        self.assertIsNotNone(card,'每份报告须在标题后、决策速览前保留分享卡片')
         src=re.search(r'<img[^>]*src="([^"]+)"',card.group(1)).group(1)
         self.assertTrue(src.startswith('data:image/jpeg;base64,'))
         self.assertEqual(base64.b64decode(src.split(',',1)[1]),(ROOT/'会员体验卡海报.jpg').read_bytes())
         self.assertIn('https://work.weixin.qq.com/ct/wcde937479180800d2ce8d79af05f9644fde',card.group(1))
         self.assertIn('3天体验',card.group(1))
-        self.assertLess(text.index('id="sources"'),text.index('id="referral"'))
+        self.assertLess(text.index('<h1>'),text.index('id="referral"'))
+        self.assertLess(text.index('id="referral"'),text.index('id="overview"'))
     def test_missing_referral_card_rejected(self):
         text=self.render();self.path.write_text(re.sub(r'<section id="referral".*?</section>','',text,flags=re.S))
         self.assertFalse(v.check_html(self.path)['passed'])
@@ -302,8 +303,12 @@ class ReportTests(unittest.TestCase):
         text=self.render();card=re.search(r'<section id="referral".*?</section>',text,re.S).group()
         self.path.write_text(text.replace(card,'').replace('<main>','<main>'+card))
         self.assertFalse(v.check_html(self.path)['passed'])
-    def test_content_added_after_card_rejected(self):
-        text=self.render();self.path.write_text(text.replace('</main>','<section id="after-card">追加正文</section></main>'))
+    def test_card_moved_to_bottom_rejected(self):
+        text=self.render();card=re.search(r'<section id="referral".*?</section>',text,re.S).group()
+        self.path.write_text(text.replace(card,'').replace('</main>',card+'</main>'))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_content_before_card_rejected(self):
+        text=self.render();self.path.write_text(text.replace('<section id="referral"','<section id="before-card">提前插入正文</section><section id="referral"'))
         self.assertFalse(v.check_html(self.path)['passed'])
     def test_broken_anchor_rejected(self):
         text=self.render();self.path.write_text(text.replace('href="#overview"','href="#not-there"',1))
