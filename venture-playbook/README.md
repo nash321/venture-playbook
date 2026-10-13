@@ -1,4 +1,4 @@
-# 项目研判 · Venture Playbook V9.1.5
+# 项目研判 · Venture Playbook V9.1.6（本机试用）
 
 把一篇创业复盘，变成看得懂、查得到、改得动、做得下去的报告。
 

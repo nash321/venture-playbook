@@ -2,7 +2,7 @@
 name: venture-playbook
 description: 把创业文章、经营复盘、项目链接或想法，变成原文主导的精美HTML研究报告与可编辑行动工作台。用于分析生财或其他创业项目、判断能否复制、公开网络同类比较、制定有时间安排的ToDo及状态决策；也处理本Skill安装、会员体验卡、连接生财资料和逐步登录引导。生财资料可选，不使用生财仍可用全网资料分析。不要用于保证收益或代替用户开展真实经营。
 metadata:
-  version: "9.1.5"
+  version: "9.1.6"
   language: "zh-CN"
   distribution: "portable-customer-edition"
   compatibility: "Python 3.10+；Codex默认配置需Python 3.11+；完整研究需公开搜索与阅读，登录使用宿主官方机制。"
