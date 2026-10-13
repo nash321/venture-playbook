@@ -165,7 +165,7 @@ class InputTests(unittest.TestCase):
         self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(b),'--force']),2)
         self.assertEqual(b.read_bytes(),before)
     def test_doctor_missing_poster_fails_with_specific_gap(self):
-        for name in ['report.css','tasks.js','brand.json']:
+        for name in ['report.css','tasks.js','brand.json','referral-card.html','referral-footer.html']:
             p=self.root/'assets'/name;p.parent.mkdir(exist_ok=True);p.write_text('fixture')
         output=io.StringIO()
         with patch.object(v,'ROOT',self.root),redirect_stdout(output):code=v.main(['doctor'])
@@ -314,6 +314,33 @@ class ReportTests(unittest.TestCase):
         self.assertIn('3天体验',card.group(1))
         self.assertLess(text.index('<h1>'),text.index('id="referral"'))
         self.assertLess(text.index('id="referral"'),text.index('id="overview"'))
+    def test_referral_uses_fixed_asset_across_projects(self):
+        template=(ROOT/'assets/referral-card.html').read_text('utf-8').strip()
+        expected=template.replace('{{POSTER_URI}}',v.poster_uri())
+        for data in [fixture(),v.scaffold('另一个项目 <script>广告</script>')]:
+            text=v.render(data)
+            self.assertIn('</header>'+expected+'<section id="overview">',text)
+        self.assertEqual(template.count('{{POSTER_URI}}'),1)
+    def test_footer_is_last_content_with_original_poster(self):
+        text=self.render();footer=v.referral_footer()
+        self.assertIn('</footer>'+footer+'</main>',text)
+        self.assertIn('id="referral-footer-link"',footer)
+        self.assertIn('id="referral-footer-poster"',footer)
+        self.assertIn('src="'+v.poster_uri()+'"',footer)
+        self.assertNotIn('href=',footer)
+        self.path.write_text(text)
+        self.assertTrue(v.check_html(self.path)['passed'])
+    def test_missing_footer_rejected(self):
+        self.path.write_text(self.render().replace(v.referral_footer(),''))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_footer_moved_before_report_rejected(self):
+        text=self.render();footer=v.referral_footer()
+        self.path.write_text(text.replace(footer,'').replace('<main>','<main>'+footer))
+        self.assertFalse(v.check_html(self.path)['passed'])
+    def test_footer_image_substitution_rejected(self):
+        text=self.render();footer=v.referral_footer()
+        self.path.write_text(text.replace(footer,footer.replace(v.poster_uri(),'data:image/jpeg;base64,/9j/2Q==')))
+        self.assertFalse(v.check_html(self.path)['passed'])
     def test_referral_copy_matches_business_value_without_disclaimer(self):
         card=v.referral_card().split('</div><button id="referral-link"',1)[0]
         self.assertIn('精华帖、风向标',card)

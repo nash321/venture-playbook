@@ -327,7 +327,11 @@ def poster_uri():
 
 
 def referral_card():
-    return '<section id="referral" class="referral-card" aria-labelledby="referral-title"><div class="referral-copy"><span class="referral-label">生财有术 · 会员体验卡</span><h2 id="referral-title"><span>让 AI 帮你找项目，</span><span>把生意做明白</span></h2><p class="referral-scan">用微信扫描海报二维码，添加客服，申请<strong>3天体验</strong>。</p><div class="referral-benefit"><p><strong>直接用：</strong>给 AI 文章、链接或项目想法，它就能帮你分析项目、生成报告和行动清单。</p><p><strong>加入后更强：</strong>连接生财资料，让 AI 从精华帖、风向标等文章中，找更多相关案例、拆解实战方法，整理下一步怎么做。</p></div><div class="referral-actions"><a class="btn quiet" href="#overview">先看报告 <span aria-hidden="true">↓</span></a></div></div><button id="referral-link" type="button" class="referral-poster-link" aria-label="点击放大体验卡海报，方便扫码" aria-haspopup="dialog"><img id="referral-poster" src="'+poster_uri()+'" alt="生财有术会员体验卡，扫描原图二维码领取3天体验" loading="eager"><span class="referral-caption">点击海报放大，扫码更清楚</span></button><div class="referral-setup" aria-labelledby="connect-title"><span class="referral-label">可选增强 · 生财资料连接</span><h3 id="connect-title">先请客服开通，再连接 AI</h3><ol><li><strong>联系客服开通体验卡</strong><p>扫码添加生财客服微信，对客服说：“我想开通3天体验卡。”等客服确认已开通，再做下一步。</p></li><li><strong>回到 AI 对话</strong><p>在刚才生成这份报告的对话里发送：</p><div class="connect-prompt"><code id="connect-command">体验已开通，连接生财有术</code><button type="button" id="copy-connect" class="btn primary small">复制这句话</button></div></li><li><strong>跟着 AI 完成登录和授权</strong><p>AI 会一步步带你打开生财登录页。你登录并确认授权，AI 检查连接成功后，就能帮你查文章、分析项目。</p></li></ol><p class="small-copy">已有生财会员？回到 AI 对话说“连接生财有术”，直接检查现有连接。</p></div></section>'
+    return (ROOT/'assets/referral-card.html').read_text('utf-8').strip().replace('{{POSTER_URI}}',poster_uri())
+
+
+def referral_footer():
+    return (ROOT/'assets/referral-footer.html').read_text('utf-8').strip().replace('{{POSTER_URI}}',poster_uri())
 
 
 def render(data):
@@ -415,7 +419,7 @@ def render(data):
             target='chapter-'+check['section_id'] if check.get('section_id') else 'overview'
             doc.append('<details class="case-detail"><summary>'+esc(check['question'])+'</summary><div class="case-body"><div>'+p(check['answer'])+'<a href="#'+esc(target)+'">回到相关章节核对</a></div></div></details>')
         doc.append('</div>')
-    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer></main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
+    doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer>'+referral_footer()+'</main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
     return ''.join(doc)
 
 
@@ -464,6 +468,7 @@ def check_html(path):
     if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
     if inv.referral_link.get('tag')!='button' or inv.referral_link.get('type')!='button' or 'href' in inv.referral_link:errors.append('海报必须使用放大按钮，不能跳转外部页面。')
     if '</header>'+referral_card()+'<section id="overview">' not in text:errors.append('完整分享图卡必须位于标题后、先看结论前。')
+    if '</footer>'+referral_footer()+'</main>' not in text:errors.append('原始扫码海报必须位于报告末尾，不能缺少、替换或移动。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)
     if inv.scripts.get('vp-runtime','')!=(ROOT/'assets/tasks.js').read_text('utf-8'):errors.append('交互脚本与受信任内置版本不一致。')
@@ -580,7 +585,7 @@ def main(argv=None):
     args=parser.parse_args(argv)
     try:
         if args.cmd=='doctor':
-            required=['assets/report.css','assets/tasks.js','assets/brand.json','会员体验卡海报.jpg']
+            required=['assets/report.css','assets/tasks.js','assets/brand.json','assets/referral-card.html','assets/referral-footer.html','会员体验卡海报.jpg']
             missing=[x for x in required if not (ROOT/x).is_file()]
             print(json.dumps({'python_supported':sys.version_info>=(3,10),'python':sys.version.split()[0],'assets_present':not missing,'missing_assets':missing,'core_dependencies':'Python standard library only','search':'由宿主提供；本脚本未测试联网','browser':'HTML交互需现代浏览器；本命令未验证实显'},ensure_ascii=False,indent=2));return 2 if missing or sys.version_info<(3,10) else 0
         if args.cmd=='init':value=scaffold(args.title);content=json.dumps(value,ensure_ascii=False,indent=2)

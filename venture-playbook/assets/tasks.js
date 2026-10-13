@@ -328,8 +328,8 @@
     }
     notify(copied?'已复制。客服确认体验已开通后，请回到 AI 对话粘贴并发送。':'客服确认体验已开通后，请复制选中的指令，回到 AI 对话发送。');
   });
-  const poster=$('referral-poster'),posterButton=$('referral-link');
-  if(poster && posterButton && typeof HTMLDialogElement!=='undefined') {
+  const poster=$('referral-poster'),posterButtons=document.querySelectorAll('.referral-poster-link');
+  if(poster && posterButtons.length && typeof HTMLDialogElement!=='undefined') {
     let preview=$('poster-dialog');
     if(!preview) {
       preview=el('dialog',{id:'poster-dialog',class:'poster-dialog','aria-label':'体验卡海报大图'});
@@ -341,7 +341,7 @@
     preview.addEventListener('close',()=>{if(posterView)window.scrollTo({...posterView,behavior:'instant'});});
     preview.querySelector('button').addEventListener('click',()=>preview.close());
     preview.addEventListener('click',e=>{if(e.target===preview)preview.close();});
-    posterButton.addEventListener('click',()=>{posterView={left:scrollX,top:scrollY};preview.querySelector('img').src=poster.src;preview.showModal();});
+    for(const button of posterButtons)button.addEventListener('click',()=>{posterView={left:scrollX,top:scrollY};preview.querySelector('img').src=button.querySelector('img').src;preview.showModal();});
   }
   document.documentElement.classList.add('enhanced');render();updateStorageLabel();showState();
 })();
