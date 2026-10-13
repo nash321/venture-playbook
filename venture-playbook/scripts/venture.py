@@ -379,7 +379,7 @@ def check_html(path):
     if len(inv.ids)!=len(set(inv.ids)):errors.append('DOM编号重复。')
     if inv.referral_image.get('src')!=poster_uri():errors.append('缺少原始分享海报或图卡已被替换。')
     if inv.referral_link.get('href')!=REFERRAL_URL:errors.append('缺少作者固定分享入口或链接已被替换。')
-    if not re.search(r'<section\b[^>]*id="referral"[^>]*>.*?</section>\s*</main>',text,re.S):errors.append('分享图卡必须位于正文最底部。')
+    if referral_card()+'</main>' not in text:errors.append('完整分享图卡必须位于正文最底部。')
     for value in inv.links:
         if value.startswith('#') and value[1:] not in inv.ids:errors.append('目录锚点无目标：'+value)
     if inv.scripts.get('vp-runtime','')!=(ROOT/'assets/tasks.js').read_text('utf-8'):errors.append('交互脚本与受信任内置版本不一致。')

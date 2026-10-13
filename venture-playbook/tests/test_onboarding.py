@@ -154,6 +154,15 @@ class GuideTests(unittest.TestCase):
         result=guide.choose('codex',self.home,'connect')
         self.assertEqual(result['stage'],'verify')
         self.assertEqual(result['agent_action'],[])
+    def test_gemini_login_uses_reused_connection_name(self):
+        path=self.home/'.gemini/settings.json';path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({'mcpServers':{'my-scys':{'httpUrl':setup.ENDPOINT}}}))
+        setup.ensure('gemini',self.home)
+        guide.choose('gemini',self.home,'connect')
+        result=guide.login('gemini',self.home)
+        self.assertIn('/mcp auth my-scys',result['instruction'])
+        self.assertNotIn('/mcp auth scys-mcp',result['instruction'])
+        self.assertEqual(result['agent_action'],[])
     def test_skip_resume_keeps_exact_step(self):
         guide.choose('cursor',self.home,'register');guide.advance('cursor',self.home)
         guide.choose('cursor',self.home,'skip')

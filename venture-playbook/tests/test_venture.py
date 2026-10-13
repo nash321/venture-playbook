@@ -235,6 +235,9 @@ class ReportTests(unittest.TestCase):
         text=self.render();card=re.search(r'<section id="referral".*?</section>',text,re.S).group()
         self.path.write_text(text.replace(card,'').replace('<main>','<main>'+card))
         self.assertFalse(v.check_html(self.path)['passed'])
+    def test_content_added_after_card_rejected(self):
+        text=self.render();self.path.write_text(text.replace('</main>','<section id="after-card">追加正文</section></main>'))
+        self.assertFalse(v.check_html(self.path)['passed'])
     def test_broken_anchor_rejected(self):
         text=self.render();self.path.write_text(text.replace('href="#overview"','href="#not-there"',1))
         self.assertFalse(v.check_html(self.path)['passed'])

@@ -68,9 +68,11 @@ def step(host, home):
     elif stage=='done': message='已记住你的选择，我们继续分析项目。'
     else: message='请选择：领取会员体验卡／连接生财资料／直接分析项目。'
     receipt_path=setup.state_dir(home,host)/'setup-receipt.json'
-    if action and receipt_path.is_file():
+    if (action or (host=='gemini' and stage=='login')) and receipt_path.is_file():
         saved=json.loads(receipt_path.read_text())
-        if saved.get('configured') and isinstance(saved.get('server_name'),str):action=[*action[:-1],saved['server_name']]
+        if saved.get('configured') and isinstance(saved.get('server_name'),str):
+            if action:action=[*action[:-1],saved['server_name']]
+            else:message=message.replace('/mcp auth '+setup.SERVER,'/mcp auth '+saved['server_name'],1)
     return {'stage':stage,'instruction':message,'agent_action':action,
             'poster_path':str(ROOT/'会员体验卡海报.jpg') if stage=='scan' else None}
 
