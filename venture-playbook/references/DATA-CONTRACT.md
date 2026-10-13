@@ -25,11 +25,18 @@
 | states | 可观测状态与行动，见下表 |
 | limitations / markov_note | 重要缺口与状态模型边界 |
 | review | source_fidelity、independence为checked/not_checked，notes记真实检查结论 |
+| reading_guide（可选） | 白话导读、术语首次解释、首项动作示例与理解自检；不修改原文或待办 |
 
 sources.kind：user_material、official、founder、customer、media、research、demo。
 来源read_status：full、partial、blocked、not_read。用户粘贴材料与原创demo可以没有URL；其他网络来源必须有真实HTTP(S)网址。不要用“某官网”替代来源。
 
 cases必需：id、name、entity_id、relationship（direct/adjacent/counter）、match_reason、workflow、payment_evidence、transferable、risk、source_ids。要计入完整独立横评，还需independence_checked=true及read_status=full。acquisition、costs、retention可补具体内容。entity_id是经营主体，不是网页ID。
+
+reading_guide.overview为白话导读；terms为对象数组，每项有term、explanation及可选section_id，指向首次使用的已有原文章节，省略时在导读显示。同一术语只定义一次。first_action有task_id（已有任务）和example（明确标记为说明示例）。self_check至少一项，每项有question、answer及可选section_id，答案可回查相应章节；省略时回到决策速览。没有reading_guide的旧数据继续兼容。详细写法与真实读者验收见READABILITY.md。
+
+只增补阅读说明、不改变任务与状态时，修订旧HTML应先读取vp-data中的revision并在project.json显式保留；不能让新导读造成客户已有记录失联。真实读者回答和成绩不由此字段或编译器生成。
+
+客户从备份删除示例对应任务后，merge-tasks保留原示例，标记first_action.removed_from_plan=true；页面明确该行动已删除，不重新添加任务。恢复该任务后标记移除。浏览器直接删除、导入、撤销或恢复本地记录时，示例说明也跟随当前清单更新；保存HTML保留对应说明。此标记记录客户计划变化，不表示执行完成。
 
 任务必需：id、title、action、deliverable、acceptance、on_failure。其他文字字段：phase、day、due（真实YYYY-MM-DD或空）、owner、priority（high/normal/low）、status（todo/doing/done/blocked）、estimate、cost、inputs、tool、notes。depends_on为已有任务ID数组。时间、费用都是文字口径，不由脚本生成商业数字。默认Agent应填清关键字段，不能靠结构最小值降低行动质量。
 

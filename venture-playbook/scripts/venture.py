@@ -201,6 +201,34 @@ def validate_data(data):
         string(step.get('title'),'步骤标题',True);string(step.get('detail',''),'步骤说明')
     for key in ['shared','differences']:
         if not all(isinstance(v,str) for v in arr(data.get('synthesis',{}),key)):raise InputError('综合比较须为文字数组。')
+    if 'reading_guide' in data:
+        guide=data['reading_guide']
+        if not isinstance(guide,dict):raise InputError('reading_guide必须为对象。')
+        string(guide.get('overview'),'白话导读',True)
+        terms=set()
+        for term in arr(guide,'terms'):
+            if not isinstance(term,dict):raise InputError('术语解释须为对象。')
+            name=string(term.get('term'),'术语',True,200)
+            string(term.get('explanation'),'白话解释',True)
+            if name in terms:raise InputError('术语重复；只在首次使用处解释。')
+            terms.add(name)
+            sid=string(term.get('section_id',''),'术语章节ID',False,100)
+            if sid and sid not in unique_sections:raise InputError('术语解释必须指向已有原文章节。')
+        first=guide.get('first_action')
+        if not isinstance(first,dict):raise InputError('first_action必须为对象。')
+        tid=string(first.get('task_id'),'示例任务ID',True,100)
+        removed=first.get('removed_from_plan',False)
+        if not isinstance(removed,bool):raise InputError('任务删除标记必须为布尔值。')
+        present=tid in {t['id'] for t in data['tasks']}
+        if not present and not removed:raise InputError('动作示例必须指向已有任务。')
+        if present and removed:raise InputError('任务仍在当前计划中，不能标为已删除。')
+        string(first.get('example'),'动作示例',True)
+        if not arr(guide,'self_check'):raise InputError('白话导读需至少一项理解自检。')
+        for check in guide['self_check']:
+            if not isinstance(check,dict):raise InputError('理解自检须为对象。')
+            for key in ['question','answer']:string(check.get(key),'理解自检.'+key,True)
+            sid=string(check.get('section_id',''),'理解自检章节ID',False,100)
+            if sid and sid not in unique_sections:raise InputError('理解自检必须指向已有原文章节。')
     if not all(isinstance(v,str) for v in arr(data,'limitations')):raise InputError('limitations须为文字数组。')
     selected=data.get('selected_state','')
     if not isinstance(selected,str) or (selected and selected not in state_ids):raise InputError('选中的状态不存在。')
@@ -284,12 +312,22 @@ def render(data):
     doc.append('<a class="skip-link" href="#overview">跳到报告正文</a><aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">'+esc(brand['mark'])+'</span>'+esc(brand['name'])+'</a><div class="brand-sub">'+esc(brand['english_name'])+'</div><p class="nav-caption">报告导航</p><nav class="nav-links" aria-label="报告目录">'+''.join(f'<a href="#{i}"><span>{n}</span>{label}</a>' for i,n,label in nav)+'</nav><div class="sidebar-foot"><p>'+esc(brand['tagline'])+'</p><p>本地文件 · 无账户 · 无追踪</p></div></aside><div class="shell"><div class="topbar"><span>'+esc(d.get('generated_on','日期未填写'))+' · '+esc(d.get('edition','研究与执行版'))+'</span><a href="#sources">查看研究边界</a></div><main>')
     doc.append('<header class="hero"><h1>'+esc(d['title'])+'</h1>'+p(d['subtitle'],'subtitle')+'<div class="hero-actions"><a class="btn primary" href="#actions">进入行动工作台 <span aria-hidden="true">↗</span></a><button type="button" class="btn js-only inline" data-save-html>保存完整报告</button><button type="button" id="print-report" class="btn quiet js-only inline">打印</button></div><div class="hero-context"><span>'+esc(RESEARCH[d['research_status']])+'</span><span>原文、公开证据与建议分别标记</span><span>待办可编辑，可离线保留</span></div></header>')
     verdict=d['verdict'];project=d.get('project',{})
-    doc.append('<section id="overview"><div class="decision"><div class="decision-main"><div class="decision-label">现在的判断</div><h3>'+esc(verdict['decision'])+'</h3>'+p(verdict['reason'])+'</div><div class="decision-side"><div><div class="decision-label">唯一下一步</div>'+p(verdict['next_step'])+'</div><div><div class="decision-label">暂时不要做</div>'+p(verdict.get('avoid','先不要放大未经验证的假设。'))+'</div></div></div><div class="facts-strip">'+''.join('<div class="fact"><span>'+label+'</span><strong>'+esc(project.get(k,'待核'))+'</strong></div>' for k,label in [('buyer','谁会付钱'),('deliverable','买到什么'),('revenue_model','如何收费')])+'</div>')
+    doc.append('<section id="overview">')
+    guide=d.get('reading_guide')
+    if guide:
+        doc.append('<div id="reading-guide" class="takeaway"><h3>先用白话看懂这件事</h3>'+p(guide['overview'])+'<p class="small-copy">先抓重点：看本页判断与各章第一句；准备动手：看<a href="#action-example">动作示例</a>与行动清单；核对细节：逐章阅读正文、案例和来源。完整细节均保留。</p><a href="#reader-check">读完后，用几个问题检查是否理解</a></div>')
+        for term in guide.get('terms',[]):
+            if not term.get('section_id'):doc.append(p(term['term']+'：'+term['explanation'],'small-copy'))
+    doc.append('<div class="decision"><div class="decision-main"><div class="decision-label">现在的判断</div><h3>'+esc(verdict['decision'])+'</h3>'+p(verdict['reason'])+'</div><div class="decision-side"><div><div class="decision-label">唯一下一步</div>'+p(verdict['next_step'])+'</div><div><div class="decision-label">暂时不要做</div>'+p(verdict.get('avoid','先不要放大未经验证的假设。'))+'</div></div></div><div class="facts-strip">'+''.join('<div class="fact"><span>'+label+'</span><strong>'+esc(project.get(k,'待核'))+'</strong></div>' for k,label in [('buyer','谁会付钱'),('deliverable','买到什么'),('revenue_model','如何收费')])+'</div>')
     if d.get('evidence_boundary'): doc.append('<div class="boundary">'+p(d['evidence_boundary'])+'</div>')
     doc.append('</section><section id="source" class="section">'+section_head('02','先读懂原文','沿作者的章节和因果顺序解读；旁边的建议，不冒充作者已经做过。'))
     if not d.get('source_sections'): doc.append(p('当前输入是项目想法，或主体原文尚未取得。下文不会伪造作者经历。','boundary'))
     for idx,s in enumerate(d.get('source_sections',[]),1):
-        doc.append('<article class="chapter" id="chapter-'+esc(s['id'])+'"><div class="chapter-title"><span class="chapter-no">'+str(idx).zfill(2)+'</span><h3>'+esc(s['title'])+'</h3></div><div class="reading">'+p(s['key_point'],'chapter-lead')+''.join(p(v) for v in s['paragraphs'])+refs_html(s.get('source_ids',[])))
+        term_notes=''
+        if guide:
+            term_notes=''.join(p(term['term']+'：'+term['explanation'],'small-copy') for term in guide.get('terms',[]) if term.get('section_id')==s['id'])
+            if term_notes:term_notes='<div class="term-notes" aria-label="本节术语的白话解释">'+term_notes+'</div>'
+        doc.append('<article class="chapter" id="chapter-'+esc(s['id'])+'"><div class="chapter-title"><span class="chapter-no">'+str(idx).zfill(2)+'</span><h3>'+esc(s['title'])+'</h3></div><div class="reading">'+term_notes+p(s['key_point'],'chapter-lead')+''.join(p(v) for v in s['paragraphs'])+refs_html(s.get('source_ids',[])))
         if s.get('takeaways'): doc.append('<div class="takeaway"><div class="takeaway-label">这一步最值得借鉴</div>'+ul(s['takeaways'])+'</div>')
         if s.get('unknowns'): doc.append(p('仍需核实：'+'；'.join(s['unknowns']),'small-copy'))
         doc.append('</div></article>')
@@ -319,6 +357,11 @@ def render(data):
     doc.append('</section><section id="actions" class="section">'+section_head('05','把报告，变成今天能做的事','每项行动都有输入、产物、通过标准和失败分支。修改只影响你的计划，不会改写研究依据。'))
     doc.append('<div class="roadmap">'+''.join('<div class="milestone"><span>'+esc(m['horizon'])+'</span><h4>'+esc(m['title'])+'</h4>'+p(m['acceptance'])+'</div>' for m in d.get('milestones',[]))+'</div>')
     doc.append(p(d.get('schedule_note','这是建议排期，不是作者实测耗时；按自己的时间调整，不以任务打勾冒充真实收入。'),'small-copy'))
+    if guide:
+        first=guide['first_action']
+        task_note='对应行动：'+first['task_id']+'；完整输入、产物与停止条件仍在清单中。'
+        if first.get('removed_from_plan'):task_note='原对应行动 '+first['task_id']+' 已从当前计划删除；示例保留供理解原计划，不代表需要恢复执行。'
+        doc.append('<div id="action-example" class="takeaway"><h4>第一项行动，可以怎样写</h4>'+p(first['example'])+'<p id="action-example-note" class="small-copy" data-example-task-id="'+esc(first['task_id'])+'">'+esc('这是本报告补充的说明示例，不是作者经历或已执行结果。'+task_note)+'</p></div>')
     doc.append('<p class="no-js-note">当前查看器未启用交互。正文和行动清单仍可阅读；请将HTML文件用浏览器打开后编辑。</p><div id="local-banner" class="local-banner" hidden></div><div class="board"><div class="board-top"><div><h3>我的行动清单</h3><p>先做最关键的一项，再根据结果调整。</p></div><div class="board-actions js-only"><button id="undo" type="button" class="btn small" disabled>撤销</button><button id="backup-tasks" type="button" class="btn small">备份待办</button><button id="import-tasks" type="button" class="btn small">导入</button><button id="add-task" type="button" class="btn primary small">＋ 新增行动</button></div></div><div class="filters js-only"><label class="search-filter"><span class="visually-hidden">搜索待办</span><input id="search" type="search" maxlength="240" placeholder="搜索任务、负责人或备注"></label><label><span class="visually-hidden">按状态筛选</span><select id="status-filter"><option value="">所有状态</option>'+''.join(f'<option value="{k}">{v}</option>' for k,v in STATUSES.items())+'</select></label><label><span class="visually-hidden">按阶段筛选</span><select id="phase-filter"><option value="">所有阶段</option></select></label><label class="sort-filter"><span class="visually-hidden">任务排序</span><select id="sort-filter"><option value="original">我的顺序</option><option value="priority">优先级</option><option value="due">截止日期</option></select></label></div><p id="order-hint" class="order-hint small-copy js-only">用每项右侧的上下箭头调整顺序，可以撤销。</p><div class="list-context js-only"><span id="task-count">当前待办</span><button id="reset-filters" type="button" class="btn quiet small">清除筛选</button></div><div id="task-list">'+''.join(render_task(t) for t in d['tasks'])+'</div><div id="tasks-empty" class="empty" hidden><h4>没有匹配的行动</h4><p>清除筛选，或新增一项更具体的任务。</p></div><div id="storage-bar" class="storage-bar"><span id="storage-message">浏览器本地保存 · 换设备前请保存完整报告</span><div class="board-actions js-only"><button id="export-csv" type="button" class="btn quiet small">导出CSV</button><button type="button" class="btn quiet small" data-save-html>保存完整报告</button></div></div></div><input type="file" id="import-file" accept=".json,application/json" hidden>')
     doc.append('</section><section id="states" class="section">'+section_head('06','卡在哪一步，就先解决哪一步','这是受行动影响的有限状态计划。没有真实同口径样本时，转移概率保持未知。'))
     if d.get('states'):
@@ -331,6 +374,12 @@ def render(data):
         link=f'<a href="{esc(safe_url(s.get("url","")))}" target="_blank" rel="noopener noreferrer">{esc(s["title"])}</a>' if s.get('url') else '<strong>'+esc(s['title'])+'</strong>'
         doc.append('<div class="source-item" id="ref-'+esc(s['id'])+'"><span class="ref-id">'+esc(s['id'])+'</span><div>'+link+p('来源：'+s.get('publisher','提供材料')+' · 阅读：'+s.get('read_status','not_read')+' · 读取日：'+s.get('accessed_on','未记录'))+p(s.get('supports',''))+p(s.get('limitations',''))+'</div></div>')
     if d.get('limitations'): doc.append('<div class="sources-note"><h4>仍需补证</h4>'+ul(d['limitations'])+'</div>')
+    if guide:
+        doc.append('<div id="reader-check" class="sources-note"><h3>读完后，试着自己回答</h3>'+p('先不展开答案，用自己的话回答，再对照正文。自检题不是测试成绩；真实读者理解验收尚未执行。','small-copy'))
+        for check in guide.get('self_check',[]):
+            target='chapter-'+check['section_id'] if check.get('section_id') else 'overview'
+            doc.append('<details class="case-detail"><summary>'+esc(check['question'])+'</summary><div class="case-body"><div>'+p(check['answer'])+'<a href="#'+esc(target)+'">回到相关章节核对</a></div></div></details>')
+        doc.append('</div>')
     doc.append('</section><footer class="report-end"><span>项目研判 · Venture Playbook</span><span>'+esc(rid)+' · '+esc(d.get('generated_on',''))+'</span></footer>'+referral_card()+'</main></div>'+dialogs()+'<script id="vp-data" type="application/json">'+payload+'</script><script id="vp-runtime">'+js+'</script></body></html>')
     return ''.join(doc)
 
@@ -511,9 +560,13 @@ def main(argv=None):
         elif args.cmd=='export-tasks':content=export_tasks(read_json(args.input))
         elif args.cmd=='merge-tasks':
             if args.out.resolve()==args.tasks.resolve():raise InputError('输出不能覆盖待办备份或保存的HTML；请指定新文件。')
-            data=read_json(args.input);backup=read_task_backup(args.tasks)
+            data=validate_data(read_json(args.input));backup=read_task_backup(args.tasks)
             if backup.get('schema_version')!=1 or backup.get('report_id')!=data.get('report_id'):raise InputError('备份不属于该项目，未合入。')
-            data['tasks']=validate_tasks(backup.get('tasks'));data['selected_state']=backup.get('selected_state','');data.pop('revision',None);validate_data(data);content=json.dumps(data,ensure_ascii=False,indent=2)
+            data['tasks']=validate_tasks(backup.get('tasks'));data['selected_state']=backup.get('selected_state','');data.pop('revision',None)
+            first=data.get('reading_guide',{}).get('first_action',{})
+            if first and first.get('task_id') not in {t['id'] for t in data['tasks']}:first['removed_from_plan']=True
+            elif first:first.pop('removed_from_plan',None)
+            validate_data(data);content=json.dumps(data,ensure_ascii=False,indent=2)
         if hasattr(args,'input') and args.out.resolve()==args.input.resolve():raise InputError('输出不能覆盖原始输入；请指定新文件。')
         out=atomic_write(args.out,content,args.force);print('已写入：'+str(out));return 0
     except (InputError,OSError,UnicodeError,RecursionError,KeyError,TypeError) as exc:
