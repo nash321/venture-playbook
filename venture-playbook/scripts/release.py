@@ -18,6 +18,7 @@ ALLOW={
 'references/SOURCE-READING.md','references/WEB-RESEARCH.md','references/BUSINESS-REVIEW.md',
 'references/ACTION-PLAN.md','references/HTML-UX.md','references/UPDATE-AND-RECOVERY.md',
 'references/DATA-CONTRACT.md','references/COMPATIBILITY.md','references/ONBOARDING.md',
+'references/READABILITY.md',
 'examples/README.md','examples/source-demo.md','examples/project-demo.json','examples/demo-report.html',
 'tests/test_venture.py','tests/browser_smoke.py','tests/storage_mock.py','tests/test_onboarding.py'
 }

@@ -23,6 +23,13 @@ def task(k='T1',**kw):
     out.update(kw);return out
 
 
+def guide():
+    return {'overview':'先做一个能核对的样品，收入仍未知。',
+            'terms':[{'term':'订阅','explanation':'定期付费；不等于无限产能。','section_id':'subscription'}],
+            'first_action':{'task_id':'T01','example':'虚构商品任务卡；不联系真实客户。'},
+            'self_check':[{'question':'有初稿是否代表成交？','answer':'不是；仍需真实付款和交付证据。','section_id':'delivery'}]}
+
+
 class InputTests(unittest.TestCase):
     def setUp(self):self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
     def tearDown(self):self.temp.cleanup()
@@ -111,6 +118,15 @@ class InputTests(unittest.TestCase):
         a=self.root/'project.json';b=self.root/'backup.json';a.write_text(json.dumps(fixture()));b.write_text(json.dumps({'report_id':'wrong','schema_version':1,'tasks':[]}))
         self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(self.root/'out.json')]),2)
         self.assertFalse((self.root/'out.json').exists())
+    def test_merge_deleted_example_task_keeps_customer_plan_and_explanation(self):
+        original=fixture();a=self.root/'project.json';b=self.root/'backup.json';out=self.root/'updated.json'
+        a.write_text(json.dumps(original));b.write_text(json.dumps({'schema_version':1,'report_id':original['report_id'],'tasks':[]}))
+        self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(out)]),0)
+        updated=v.read_json(out);self.assertEqual(updated['tasks'],[])
+        self.assertEqual(updated['source_sections'],original['source_sections'])
+        self.assertEqual(updated['reading_guide']['first_action']['example'],original['reading_guide']['first_action']['example'])
+        self.assertTrue(updated['reading_guide']['first_action']['removed_from_plan'])
+        self.assertIn('已从当前计划删除',v.render(updated))
     def test_merge_saved_html_keeps_edits_state_and_research(self):
         original=fixture();saved=copy.deepcopy(original)
         saved['tasks'][0]['notes']='用户保存的修改';saved['selected_state']=saved['states'][0]['id']
@@ -202,6 +218,47 @@ class ReportTests(unittest.TestCase):
         d=fixture();text=self.render(d)
         for s in d['source_sections']:
             for para in s['paragraphs']:self.assertIn(v.esc(para),text)
+    def test_reading_guide_preserves_research_and_task_payload(self):
+        d=fixture();d.pop('reading_guide',None);d['revision']='customer-existing-revision'
+        before=self.render(copy.deepcopy(d));original=copy.deepcopy(d)
+        d['reading_guide']=guide();after=self.render(d)
+        for section in d['source_sections']:
+            for para in section['paragraphs']:self.assertIn(v.esc(para),after)
+        payload=lambda text:json.loads(re.search(r'<script id="vp-data" type="application/json">(.*?)</script>',text,re.S).group(1))
+        self.assertEqual(payload(before),payload(after))
+        self.assertEqual(d['source_sections'],original['source_sections'])
+        self.assertTrue(v.check_html(self.path)['passed'])
+    def test_reading_guide_rejects_invalid_references_and_shapes(self):
+        variants=[None,{'overview':'缺少示例'}]
+        for key,value in [('terms',[{'term':'词','explanation':'说明','section_id':'missing'}]),
+                          ('terms',[{'term':'词','explanation':'说明','section_id':{'id':'delivery'}}]),
+                          ('first_action',{'task_id':'missing','example':'说明'}),
+                          ('first_action',{'task_id':[],'example':'说明'}),
+                          ('first_action',{'task_id':'T01','example':'说明','removed_from_plan':'true'}),
+                          ('first_action',{'task_id':'T01','example':'说明','removed_from_plan':True}),
+                          ('self_check',[{'question':'问题','answer':'答案','section_id':'missing'}]),
+                          ('self_check',[])]:
+            invalid=guide();invalid[key]=value;variants.append(invalid)
+        duplicate=guide();duplicate['terms']*=2;variants.append(duplicate)
+        for invalid in variants:
+            with self.subTest(guide=invalid):
+                d=fixture();d['reading_guide']=invalid
+                with self.assertRaises(v.InputError):v.validate_data(d)
+    def test_reading_guide_escapes_untrusted_text(self):
+        d=fixture();d['reading_guide']=guide()
+        attack='<img src=x onerror="alert(1)">'
+        d['reading_guide']['overview']=attack
+        d['reading_guide']['terms'][0]['explanation']=attack
+        d['reading_guide']['first_action']['example']=attack
+        d['reading_guide']['self_check'][0]['answer']=attack
+        text=self.render(d);self.assertEqual(text.count(v.esc(attack)),4)
+        self.assertNotIn(attack,text);self.assertTrue(v.check_html(self.path)['passed'])
+    def test_reading_guide_works_without_original_article(self):
+        d=fixture();d['source_mode']='idea';d['source_sections']=[];d['reading_guide']=guide()
+        d['reading_guide']['terms'][0].pop('section_id')
+        d['reading_guide']['self_check'][0].pop('section_id')
+        text=self.render(d);self.assertIn('定期付费；不等于无限产能。',text)
+        self.assertTrue(v.check_html(self.path)['passed'])
     def test_plain_input_escaped(self):
         d=fixture();d['source_sections'][0]['paragraphs'].append('<script>alert(1)</script>')
         text=self.render(d);self.assertIn('&lt;script&gt;',text);self.assertTrue(v.check_html(self.path)['passed'])
