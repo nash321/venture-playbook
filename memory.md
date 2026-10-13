@@ -6,7 +6,7 @@
 - 已补齐页底原图卡、SOP编译验收交付、其他宿主出口、兼容Python、保存HTML恢复、海报自检、引导状态校验及Gemini实际连接名。95项测试、8节点结构及隔离Cursor客户实走通过；冻结82项三版回归通过，五题比较候选5项通过。
 - 9.1.0的82项测试、六节点、八题比较与网页ADOPT属于历史验收。9.1.1由用户明确省略网页复核后发布；已返回的具体建议已修，SDK仍为TIMEOUT，不冒称ADOPT。协同工作区6和9已关闭。
 - 旧正式9.1.0包及早期9.1.1候选包已移至 `temp/releases/`，旧准备回执保留历史，以 `temp/finalize-9.1.1/activation-receipt.json` 和最新进度为准。9.1.0字节回滚包保留于 `temp/footer-upgrade/baseline-v9.1.0.zip`。
-- 9.1.1正式标签已保留；本轮开发历史及9.0.0、9.1.0、9.1.1标签已同步到Gitee私有仓库 `cursorsome/venture-playbook`，远端读回一致。origin已绑定，master跟踪origin/master。推送回执见 `temp/gitee-push/`；9.1.1原发布回执见 `temp/finalize-9.1.1/closeout-receipt.json`。
+- 9.1.1正式标签已保留；开发历史及9.0.0、9.1.0、9.1.1标签已同步到Gitee私有仓库 `cursorsome/venture-playbook`（origin）和GitHub私有仓库 `nash321/venture-playbook`（github），远端读回一致。master继续跟踪origin/master。回执见 `temp/gitee-push/` 及 `temp/github-push/`；9.1.1原发布回执见 `temp/finalize-9.1.1/closeout-receipt.json`。
 - 本机Codex全局安装已生效，未发起或完成原生OAuth。激活时原配置与首次选择指纹不变；暂停期间宿主总配置在11:35另有变化，恢复时生财公共连接仍正确、首次选择不变，本轮保留现状。
 - 原始会员体验卡海报随包发布，桌面/手机真实显示已检查；二维码来自原图，3天体验为用户指定权益口径，未实测领取权益。
 - 真实精华帖全流程将复用当前已有生财云端连接；不得将云端工具读取成功冒称原生Codex OAuth完成。
@@ -41,6 +41,8 @@
 20. 2026-10-13最新明确要求：本Skill不集成Jev排查，本项目后续也不调用Jev。客户包原本没有其配置、SDK或执行入口；现已在正式源码规则与项目agent.md中明确禁止，使用宿主已有AI、脚本检查、浏览器实测与证据回读。历史回执仅保留temp；FDE项目数据删除检查方法的厂商名称，未修改研究内容或待办。
 
 21. 2026-10-13用户要求本项目Git管理并推送Gitee，已明确选择新建私有仓库 `cursorsome/venture-playbook`。使用master保存开发源码与项目进度，同步已有9.0.0、9.1.0、9.1.1标签；安装包及temp不入Git。代码推送不扩大为9.1.2全局发布或公开分享授权。
+
+22. 2026-10-13用户追加“同步推送到github”，使用当前已登录账号nash321创建同名私有仓库，保留Gitee origin并新增github远端。两端同步同一master及三个已有标签，维护说明和进度一并提交；逐一核对两端SHA，不覆盖远端历史，不扩大为新版Skill发布。
 
 ## 已采纳的方案判断
 
