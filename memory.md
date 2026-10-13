@@ -5,7 +5,7 @@
 - 2026-10-13云端接续：下列正式包、全局安装和旧temp回执为原开发机记录，未随Git checkout带入云端。云端已读取9.1.1远端标签；正式版仍9.1.1、开发版仍9.1.2候选，未重新全局安装、登录或发布。
 - 云端完成理解难度增补：导读、术语首次解释、首项行动示例与理解自检已进入Skill及示例/FDE报告；原研究字段、22章、8项待办、完整任务payload/revision和原始海报字节未变。101项单元测试、冻结96项旧测试及每份报告44项浏览器检查通过；file导航受云策略限制，采用--markup，真实客户理解验收仍未执行。
 - 当前没有原始付费材料、原文图片证据或可调用的生财/网页协同工具。历史已读记录保留，不当作本轮重新读取；原生OAuth、客户设备安装和扫码领取均未执行。
-- 本轮云端代码提交b817d73已推送GitHub审阅分支codex/9.1.2-reading-guide，远端SHA读回一致。master、9.1.1正式标签和客户全局安装未改；最新GitHub REST私仓认证及草稿PR创建通过：https://github.com/nash321/venture-playbook/pull/1 。Gitee网页可达但私仓缺认证，双端同步未完成；用户追加联网授权后生财MCP网络已达：GET与initialize返回401，OAuth元数据200；尚缺本人OAuth及当前会话工具，未实测读取。已保存start_skill和api.github.com、gitee.com、mcp.scys.com三个域名至环境草稿；当前MCP需通过实际宿主完成本人OAuth并加载连接后验证真实只读调用。
+- 本轮云端代码提交b817d73已推送GitHub审阅分支codex/9.1.2-reading-guide，远端SHA读回一致。master、9.1.1正式标签和客户全局安装未改；最新GitHub REST私仓认证及草稿PR创建通过：https://github.com/nash321/venture-playbook/pull/1 。Gitee网页可达；用户已提供gitee_token截图并已保存同名user_provided/Gitee目标要求，但当前实例未注入且草稿has_saved_binding=false，私仓认证及双端同步未完成；用户追加联网授权后生财MCP网络已达：GET与initialize返回401，OAuth元数据200；尚缺本人OAuth及当前会话工具，未实测读取。已保存start_skill和api.github.com、gitee.com、mcp.scys.com三个域名至环境草稿；当前MCP需通过实际宿主完成本人OAuth并加载连接后验证真实只读调用。
 
 - 当前正式版本9.1.1，安装包为根目录 `venture-playbook-v9.1.1.zip`；对应9.1.1标签源码、压缩包和本机Codex全局安装文件已逐项核验。工作区源码现为9.1.2候选。正式版实际生效时间2026-10-13T11:13:20.155763+08:00。
 - 已补齐页底原图卡、SOP编译验收交付、其他宿主出口、兼容Python、保存HTML恢复、海报自检、引导状态校验及Gemini实际连接名。95项测试、8节点结构及隔离Cursor客户实走通过；冻结82项三版回归通过，五题比较候选5项通过。

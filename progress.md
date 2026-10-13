@@ -58,6 +58,8 @@
 | 生财原文/原图片再核验、扫码权益 | 未执行 | 原材料和可调用生财工具缺失 |
 | 真实读者理解测试 | 未执行 | 自检题与功能通过不能代替真实读者回答 |
 
+- Gitee凭据后续：用户截图显示gitee_token，已确认该名称的user_provided要求与gitee.com目标保存成功；当前has_saved_binding=false、实际进程变量不存在，不能记作私仓授权通过。回执：temp/readability-upgrade/gitee-binding-status.json。
+
 ### 本轮避坑与恢复
 
 Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启动；使用受支持的exec提权运行、保留Chromium自身沙箱，并把XDG配置缓存放temp后启动成功。file导航仍被平台策略阻止，改用仓库已有--markup测试，准确记录未测项。冻结旧测试的隔离副本需要同级temp目录，补齐后96项通过。现有记录未找到这些云端触发条件的同因历史，不能据此断言第一次发生。
@@ -71,7 +73,7 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 ## 6. 阻塞/风险
 
 - 当前云端没有可调用的网页ChatGPT协同工具，9.1.2复核出口未闭合；旧FAST_TASKSPACE_BUSY为历史开发机原因，本轮不能确认仍有占用，不清理其他项目。上轮9.1.1省略授权不扩大到9.1.2。
-- 最新实际探测：GitHub REST私仓认证及草稿PR创建通过，Gitee首页HTTP200但私仓Git读取缺认证；用户追加联网授权后，生财GET及真实JSON-RPC initialize均返回401/Bearer认证挑战，OAuth资源元数据与授权服务器元数据返回200，网络已到达服务；本人OAuth尚未完成，当前会话无生财工具，云端配置未发现连接。当前只通过隔离配置及传输/认证发现检查，未完成真实工具读取。草稿已补齐上述三个域名，运行时配置元数据仍未显示自定义域名；以各项实际操作为证，不以元数据或网页200替代授权。回执：temp/readability-upgrade/network-mcp-followup.json（上一轮）及network-mcp-authorized.json（最新）。
+- 最新实际探测：GitHub REST私仓认证及草稿PR创建通过，Gitee首页HTTP200；用户已提供gitee_token，但当前草稿尚无保存绑定、运行实例未注入，因此私仓Git读取认证仍未完成；用户追加联网授权后，生财GET及真实JSON-RPC initialize均返回401/Bearer认证挑战，OAuth资源元数据与授权服务器元数据返回200，网络已到达服务；本人OAuth尚未完成，当前会话无生财工具，云端配置未发现连接。当前只通过隔离配置及传输/认证发现检查，未完成真实工具读取。草稿已补齐上述三个域名，运行时配置元数据仍未显示自定义域名；以各项实际操作为证，不以元数据或网页200替代授权。回执：temp/readability-upgrade/network-mcp-followup.json（上一轮）及network-mcp-authorized.json（最新）。
 - Git checkout没有原始付费材料、原文图片或旧temp回执，当前也没有可调用生财工具；只能确认本轮未丢既有报告信息，不能重新证明原文无遗漏。
 
 - 9.1.1上一轮网页复核已按明确授权省略；其SDK历史TIMEOUT和已修建议保持原记录。本轮9.1.2尚未取得复核或省略授权，不混同两轮状态。
@@ -94,8 +96,8 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 
 ## 8. 下一步动作
 
-复核草稿PR https://github.com/nash321/venture-playbook/pull/1；生财网络已通，下一步需在实际宿主接入生财连接并由本人完成OAuth；会话出现可调用工具后运行真实只读检查，不把匿名initialize的401记成成功读取。Gitee需安全认证方式，本次未要求聊天提供Token；确认私仓只读访问后再同步留证。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
+复核草稿PR https://github.com/nash321/venture-playbook/pull/1；生财网络已通，下一步需在实际宿主接入生财连接并由本人完成OAuth；会话出现可调用工具后运行真实只读检查，不把匿名initialize的401记成成功读取。用户已提供名为gitee_token的环境变量截图，已按现有名称保存user_provided凭据要求，目标为gitee.com；后台has_saved_binding=false且当前进程未注入。下一步在环境设置使用已提供值保存/发布当前绑定，随后验证私仓只读访问并同步；不重复索要Token。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
 
 ## 9. 最后更新时间
 
-2026-10-13T14:52:30+08:00（Asia/Shanghai）。
+2026-10-13T15:02:45+08:00（Asia/Shanghai）。
