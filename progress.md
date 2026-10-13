@@ -37,7 +37,7 @@
 
 ## 4. 正在进行
 
-代码提交b817d73已推送到GitHub分支codex/9.1.2-reading-guide，原生Git远端读回与本地SHA一致；master和9.1.1正式标签未修改。审阅差异：https://github.com/nash321/venture-playbook/compare/master...codex/9.1.2-reading-guide 。GitHub API和Gitee仍被云端网络代理拒绝，尚未创建PR或同步Gitee；未将单端读写冒称双端同步，未把代码提交冒称新版Skill发布。回执：temp/readability-upgrade/github-review-branch.json；汇总：temp/readability-upgrade/acceptance-summary.json。
+代码提交b817d73已推送到GitHub分支codex/9.1.2-reading-guide，原生Git远端读回与本地SHA一致；master和9.1.1正式标签未修改。审阅差异：https://github.com/nash321/venture-playbook/compare/master...codex/9.1.2-reading-guide 。后续网络实测已变化：GitHub REST认证读写通过，草稿PR已创建为https://github.com/nash321/venture-playbook/pull/1；Gitee网页可达但私仓缺认证，尚未同步；未将单端读写冒称双端同步，未把代码提交冒称新版Skill发布。回执：temp/readability-upgrade/github-review-branch.json；汇总：temp/readability-upgrade/acceptance-summary.json。
 
 ### 本轮云端验收（2026-10-13）
 
@@ -46,7 +46,7 @@
 - 回读：两份项目原有顶层研究字段逐项相等；FDE22章、8项待办、完整vp-data与revision保留，页底原JPEG字节、链接和位置不变。只新增reading_guide与显式revision，research_status仍partial。证据：temp/readability-upgrade/fidelity.json。
 - 当前测试：101项单元测试通过；同一套冻结96项旧测试与旧输入在新编译器上通过。两份报告各44项沙箱Chromium检查通过，覆盖1440×1000桌面与390×844触摸、自检展开、排序/撤销、CRUD、完整HTML下载恢复、无脚本阅读、无相关控制台错误及运行期外部请求。
 - 候选包：白名单33项文件加manifest共34项，ZIP完整性与逐文件SHA256回读通过。在云端隔离Cursor目录实际安装、重复配置、使用已安装生成器编译与结构检查通过；这是隔离脚本验收，没有客户设备或Cursor界面验收。候选ZIP与全部过程文件留temp/readability-upgrade/，不入Git。
-- 环境配置：start_skill与network.allowed_domains新增api.github.com、gitee.com已确认保存到草稿；Python/Playwright/Chromium已提供，无需install_script或新增凭据。草稿不等于运行时应用或发布；需在环境设置审阅、保存并发布。
+- 环境配置：start_skill与network.allowed_domains的api.github.com、gitee.com、mcp.scys.com已确认保存到草稿；Python/Playwright/Chromium已提供，无需install_script或新增凭据。草稿不等于运行时应用或发布；需在环境设置审阅、保存并发布。
 
 | 验收对象 | 本轮状态 | 边界 |
 |---|---|---|
@@ -70,7 +70,7 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 ## 6. 阻塞/风险
 
 - 当前云端没有可调用的网页ChatGPT协同工具，9.1.2复核出口未闭合；旧FAST_TASKSPACE_BUSY为历史开发机原因，本轮不能确认仍有占用，不清理其他项目。上轮9.1.1省略授权不扩大到9.1.2。
-- api.github.com返回Forbidden，gitee.com返回CONNECT403；已保存两个必要域名到环境草稿，运行时尚未应用。尚不能创建GitHub PR或测试Gitee私仓授权，不因网络拒绝直接索要或新增Token。
+- 最新实际探测：GitHub REST私仓认证及草稿PR创建通过，Gitee首页HTTP200但私仓Git读取缺认证；生财mcp.scys.com仍为代理CONNECT403，当前会话无可调用生财工具，云端配置也未发现连接。本轮只通过隔离MCP配置测试，未进行真实读取或OAuth。草稿已补齐上述三个域名，运行时配置元数据仍未显示自定义域名；以各项实际操作为证，不以元数据或网页200替代授权。回执：temp/readability-upgrade/network-mcp-followup.json。
 - Git checkout没有原始付费材料、原文图片或旧temp回执，当前也没有可调用生财工具；只能确认本轮未丢既有报告信息，不能重新证明原文无遗漏。
 
 - 9.1.1上一轮网页复核已按明确授权省略；其SDK历史TIMEOUT和已修建议保持原记录。本轮9.1.2尚未取得复核或省略授权，不混同两轮状态。
@@ -93,8 +93,8 @@ Chromium在命令沙箱内因sandbox helper所有者不满足要求而无法启�
 
 ## 8. 下一步动作
 
-复核已推送的GitHub审阅分支；在环境设置保存并发布已存草稿，api.github.com/gitee.com配置应用后再试PR与Gitee只读访问。确认Gitee授权可用后分别同步留证，不直接索要Token。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
+复核草稿PR https://github.com/nash321/venture-playbook/pull/1；在环境设置保存并发布包含mcp.scys.com的草稿，再核MCP连通性；连接和本人OAuth授权可用后运行真实只读工具。Gitee需安全认证方式，本次未要求聊天提供Token；确认私仓只读访问后再同步留证。之后完成本轮复核出口、真实读者理解验收，再决定9.1.2正式发布；不改写既有9.1.1正式标签。
 
 ## 9. 最后更新时间
 
-2026-10-13T13:30:19+08:00（Asia/Shanghai）。
+2026-10-13T14:25:36+08:00（Asia/Shanghai）。
