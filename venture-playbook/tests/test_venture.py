@@ -122,6 +122,16 @@ class InputTests(unittest.TestCase):
         self.assertEqual(merged['selected_state'],saved['selected_state'])
         self.assertEqual(merged['source_sections'],original['source_sections'])
         self.assertEqual(a.read_text(),json.dumps(original))
+    def test_saved_task_order_recovers_without_changing_dependencies(self):
+        original=fixture();saved=copy.deepcopy(original)
+        saved['tasks'][0],saved['tasks'][1]=saved['tasks'][1],saved['tasks'][0]
+        a=self.root/'project.json';b=self.root/'saved.html';out=self.root/'updated.json'
+        a.write_text(json.dumps(original));b.write_text(v.render(saved))
+        self.assertEqual(v.main(['merge-tasks',str(a),'--tasks',str(b),'--out',str(out)]),0)
+        merged=v.read_json(out)
+        self.assertEqual(merged['tasks'],saved['tasks'])
+        self.assertEqual({t['id']:t['depends_on'] for t in merged['tasks']},{t['id']:t['depends_on'] for t in original['tasks']})
+        self.assertEqual(merged['source_sections'],original['source_sections'])
     def test_merge_html_wrong_project_does_not_write(self):
         a=self.root/'project.json';b=self.root/'saved.html';out=self.root/'updated.json'
         a.write_text(json.dumps(fixture()));other=fixture();other['report_id']='other-project';b.write_text(v.render(other))

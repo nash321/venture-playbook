@@ -126,6 +126,19 @@
     const next=clone(state.tasks);next.find(t=>t.id===id).status=status;commit(next,'任务状态已更新。');
   }
   function button(label,name,fn) {const n=el('button',{type:'button',class:'icon-button',title:label,'aria-label':label});n.append(icon(name));n.addEventListener('click',fn);return n;}
+  function manualOrder() {
+    return $('sort-filter').value==='original' && ['search','phase-filter','status-filter'].every(id=>!$(id).value.trim());
+  }
+  function moveTask(id,direction) {
+    if(!manualOrder()) {notify('请清除筛选，并切回“我的顺序”后调整。');return;}
+    const from=state.tasks.findIndex(t=>t.id===id),to=from+direction;
+    if(from<0 || to<0 || to>=state.tasks.length) return;
+    const next=clone(state.tasks);[next[from],next[to]]=[next[to],next[from]];
+    commit(next,direction<0?'任务已上移。':'任务已下移。');
+    const row=document.querySelector(`[data-task-id="${id}"]`);
+    const preferred=row.querySelector(`[data-move="${direction}"]`);
+    (preferred.disabled?row.querySelector('[data-move]:not(:disabled)'):preferred)?.focus();
+  }
   function renderTask(t,interactive=true) {
     const row=el('article',{class:'task-row'+(t.status==='done'?' is-done':''),'data-task-id':t.id});
     const main=el('div',{class:'task-main'});
@@ -145,7 +158,13 @@
       sel.value=t.status;sel.addEventListener('change',()=>changeStatus(t.id,sel.value));meta.append(sel);
     } else meta.append(el('span',{},statuses[t.status]));
     middle.append(meta);const actions=el('div',{class:'task-buttons js-only'});
-    if(interactive) actions.append(button('编辑：'+t.title,'edit',()=>openEditor(t.id)),button('删除：'+t.title,'trash',()=>deleteTask(t.id)));
+    if(interactive) {
+      const index=state.tasks.findIndex(v=>v.id===t.id);
+      const up=button('上移：'+t.title,'up',()=>moveTask(t.id,-1)),down=button('下移：'+t.title,'down',()=>moveTask(t.id,1));
+      up.dataset.move='-1';down.dataset.move='1';
+      up.disabled=!manualOrder() || index===0;down.disabled=!manualOrder() || index===state.tasks.length-1;
+      actions.append(up,down,button('编辑：'+t.title,'edit',()=>openEditor(t.id)),button('删除：'+t.title,'trash',()=>deleteTask(t.id)));
+    }
     main.append(ck,middle,actions);row.append(main);
     const details=el('details',{class:'task-details'});details.append(el('summary',{},'步骤、产物与验收'));
     const grid=el('div',{class:'task-detail-grid'});
@@ -165,6 +184,7 @@
     $('task-list').replaceChildren(...visible.map(t=>renderTask(t)));
     $('tasks-empty').hidden=visible.length!==0;
     $('task-count').textContent=`显示 ${visible.length} 项 · 全部 ${state.tasks.length} 项`;
+    $('order-hint').textContent=manualOrder()?'用每项右侧的上下箭头调整顺序，可以撤销。':'调整顺序：先清除筛选，再切回“我的顺序”。';
     $('undo').disabled=!history.length;
     const dl=$('phase-options');dl.replaceChildren(...[...new Set(state.tasks.map(t=>t.phase))].map(v=>el('option',{value:v})));
   }
