@@ -12,4 +12,3 @@
 
 .order-hint{margin:0;padding:10px 24px;border-bottom:1px solid var(--line)}
 @media(max-width:600px){.order-hint{padding:10px 16px}.enhanced .task-buttons{display:grid;grid-template-columns:44px 44px;gap:4px}.task-buttons .icon-button{width:44px;height:44px}#task-dialog .dialog-footer{flex-wrap:wrap}#editor-save-status{display:block;flex-basis:100%;font-size:12px;line-height:1.5}#task-dialog .dialog-footer .btn-group{margin-left:auto}}
-
