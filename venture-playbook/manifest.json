@@ -3,10 +3,10 @@
   "version": "9.1.2",
   "edition": "portable-customer",
   "sha256": {
-    "CHANGELOG.md": "ffd42e264fa8cc87991c3e9d1a24e4c6eacfed1642613b2b9c63ce9d8ec0aa20",
+    "CHANGELOG.md": "6412d6af9f3503b38a5e9aa5cfc738ab2ebe8f8832f02f58a08b232f1d248adc",
     "README.md": "415c43cad196327347670694c40c7bd9346c73d25ba310e6540a6f2c9a9ba7da",
     "RELEASE-NOTES.md": "82bd04ce8ae3fe0365d3a6c587fce0632e8fac367b422dd9fbd1d8f53ffd3436",
-    "SKILL.md": "247fc568e4473d091a561683422f5f396385b6a0484d34a5765dbe5fc931df8f",
+    "SKILL.md": "e24c37b5480a681fc8cddcc475e86e8b476aa50669faed1eedfe267cbab93393",
     "START-HERE.html": "c111ccd92f209fdb787a52fee82db6de5f50a4be90f454ee86abe307cb2f0a6e",
     "USAGE.md": "fd8a59f61e489640810170de092b54d374ead84e47b145787d7686421fa5d262",
     "agents/openai.yaml": "c897ea1c5d4e7a462a6aff457903f142e869b7b53a86128a2c03b48cb8b59b25",
