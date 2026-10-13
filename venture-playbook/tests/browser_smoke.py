@@ -8,7 +8,7 @@ import argparse
 import json
 from pathlib import Path
 import tempfile
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 
 def run(args):
@@ -49,6 +49,20 @@ def run(args):
             question.locator('summary').click()
             reading_guide.evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
             page.screenshot(path=str(out/'desktop-reading-guide.png'))
+        # Edits are committed without submitting; one editor session is one undo.
+        auto_row=rows.first;auto_title=auto_row.locator('h4').inner_text()
+        auto_row.locator('button[aria-label^="编辑"]').click()
+        auto_form=page.locator('#task-form')
+        auto_form.locator('[name="title"]').fill('自动保存检查')
+        auto_form.locator('[name="title"]').press('Tab')
+        expect(rows.first.locator('h4')).to_have_text('自动保存检查')
+        auto_form.locator('[name="owner"]').fill('自动保存测试者')
+        auto_form.locator('[name="owner"]').press('Tab')
+        page.locator('#editor-close').click()
+        passed('编辑无需保存按钮且显示真实存储状态','自动保存' in page.locator('#storage-message').inner_text() or '仅本次打开' in page.locator('#storage-message').inner_text())
+        page.locator('#undo').click()
+        expect(rows.first.locator('h4')).to_have_text(auto_title)
+        passed('一次撤销还原整次编辑',rows.first.locator('.task-meta').inner_text().find('自动保存测试者')<0)
         initial_order=rows.evaluate_all('(els)=>els.map(e=>e.dataset.taskId)')
         first_row=rows.first;move=first_row.locator('button[aria-label^="下移"]')
         move.focus();move.press('Enter')

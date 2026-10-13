@@ -79,7 +79,7 @@
   }
   const key='venture-playbook:tasks:v1:'+base.report_id+':'+base.revision;
   let state={schema_version:1,report_id:base.report_id,base_revision:base.revision,tasks:clone(base.tasks),selected_state:base.selected_state||'',updated_at:''};
-  let storageOK=false,history=[],toastTimer,editId=null,lastFocus=null,askResolve=null;
+  let storageOK=false,history=[],toastTimer,editId=null,lastFocus=null,askResolve=null,editorTimer,editorSaved=false,editorComposing=false;
   const banner=(message)=>{const n=$('local-banner');n.textContent=message;n.hidden=false;};
   try {
     const saved=localStorage.getItem(key);
@@ -95,7 +95,7 @@
   function updateStorageLabel(saved=false) {
     const bar=$('storage-bar'),msg=$('storage-message');
     bar.classList.toggle('warning',!storageOK);
-    msg.textContent=storageOK?(saved?'已保存到本浏览器 · 文件本身尚未改写':'浏览器本地保存 · 换设备前请保存完整报告'):'仅本次打开有效 · 请保存完整报告或备份待办';
+    msg.textContent=storageOK?(saved?'已自动保存到本浏览器 · 文件本身尚未改写':'浏览器自动保存 · 移动或分享前请保存完整报告'):'仅本次打开有效 · 请保存完整报告或备份待办';
   }
   function persist() {
     state.updated_at=new Date().toISOString();
@@ -199,26 +199,46 @@
   function newId() {return 'u-'+(globalThis.crypto?.randomUUID?crypto.randomUUID().replaceAll('-',''):Date.now().toString(36)+Math.random().toString(36).slice(2));}
   function openEditor(id=null) {
     if(typeof $('task-dialog').showModal!=='function') {notify('当前浏览器不支持编辑弹窗，请使用较新的Chrome、Edge、Firefox或Safari。');return;}
+    clearTimeout(editorTimer);editorSaved=false;editorComposing=false;
     editId=id;lastFocus=document.activeElement;const t=state.tasks.find(v=>v.id===id)||{id:newId(),title:'',phase:'准备',day:'',due:'',owner:'我',priority:'normal',status:'todo',depends_on:[]};
-    const form=$('task-form');form.reset();$('form-error').textContent='';$('editor-title').textContent=id?'编辑行动':'新增行动';$('editing-id').textContent='任务编号：'+t.id;
+    const form=$('task-form');form.reset();$('form-error').textContent='';$('editor-save-status').textContent='有效修改会自动保存；新增行动请填齐必填项。';$('editor-title').textContent=id?'编辑行动':'新增行动';$('editing-id').textContent='任务编号：'+t.id;
     for(const k of fields) if(k!=='id' && form.elements.namedItem(k)) form.elements.namedItem(k).value=t[k]||'';
     form.elements.namedItem('depends_on').value=t.depends_on.join(', ');form.dataset.newId=t.id;
     $('task-dialog').showModal();form.elements.namedItem('title').focus();
   }
-  function closeEditor() {$('task-dialog').close();if(lastFocus?.isConnected) lastFocus.focus();}
-  $('task-form').addEventListener('submit',e=>{
-    e.preventDefault();const form=e.currentTarget;const t={id:editId||form.dataset.newId};
+  function closeEditor() {clearTimeout(editorTimer);$('task-dialog').close();editorSaved=false;const focus=lastFocus?.isConnected?lastFocus:document.querySelector(`[data-task-id="${editId}"] button[aria-label^="编辑"]`)||$('add-task');focus.focus();}
+  function saveEditor(close=false) {
+    clearTimeout(editorTimer);
+    if(editorComposing || !$('task-dialog').open)return false;
+    const form=$('task-form');const t={id:editId||form.dataset.newId};
     for(const k of fields) if(k!=='id') t[k]=String(form.elements.namedItem(k)?.value||'').trim();
     t.depends_on=String(form.elements.namedItem('depends_on').value).split(/[,，\n]/).map(x=>x.trim()).filter(Boolean);
-    const next=clone(state.tasks),idx=next.findIndex(v=>v.id===editId);
+    const next=clone(state.tasks),idx=next.findIndex(v=>v.id===t.id);
     if(idx<0) next.push(t);else next[idx]=t;
     try {
+      for(const [name,label] of [['title','行动名称'],['action','具体步骤'],['deliverable','交付物'],['acceptance','验收标准'],['on_failure','失败分支']]) if(!t[name])throw new Error('请填写'+label+'。');
       const checked=validTasks(next);
       for(const item of checked) if(item.status==='done' && item.depends_on.some(id=>checked.find(v=>v.id===id).status!=='done')) throw new Error('已完成任务不能依赖未完成任务，请检查状态。');
-      if(!editId){for(const id of ['search','phase-filter','status-filter']) $(id).value='';$('sort-filter').value='original';}
-      commit(checked,editId?'任务已修改。':'任务已添加。');closeEditor();
-    } catch(err) {$('form-error').textContent=err.message;}
-  });
+      if(JSON.stringify(checked)!==JSON.stringify(state.tasks)) {
+        if(!editorSaved){snapshot();editorSaved=true;}
+        if(!editId){for(const id of ['search','phase-filter','status-filter']) $(id).value='';$('sort-filter').value='original';}
+        editId=t.id;state.tasks=checked;persist();render();
+      }
+      $('editor-save-status').textContent=editorSaved?(storageOK?'已自动保存到本浏览器；可撤销本次编辑。':'仅本次打开有效；请保存完整报告或备份待办。'):'没有新的修改；有效修改会自动保存。';
+      $('form-error').textContent='';if(close)closeEditor();return true;
+    } catch(err) {$('form-error').textContent='未自动保存：'+err.message;$('editor-save-status').textContent='本次输入未保存；请修正提示或撤销本次编辑。';return false;}
+  }
+  function cancelEditor() {clearTimeout(editorTimer);if(editorSaved)undo();closeEditor();}
+  const editorForm=$('task-form');
+  editorForm.addEventListener('input',e=>{if(e.isComposing || editorComposing)return;clearTimeout(editorTimer);editorTimer=setTimeout(()=>saveEditor(),350);});
+  editorForm.addEventListener('change',()=>saveEditor());
+  editorForm.addEventListener('focusout',()=>saveEditor());
+  editorForm.addEventListener('compositionstart',()=>{editorComposing=true;clearTimeout(editorTimer);});
+  editorForm.addEventListener('compositionend',()=>{editorComposing=false;clearTimeout(editorTimer);editorTimer=setTimeout(()=>saveEditor(),350);});
+  editorForm.addEventListener('submit',e=>{e.preventDefault();saveEditor(true);});
+  $('task-dialog').addEventListener('cancel',e=>{e.preventDefault();cancelEditor();});
+  addEventListener('pagehide',()=>saveEditor());
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)saveEditor();});
   function ask(title,message,confirmLabel='确认') {
     if(typeof $('confirm-dialog').showModal!=='function') return Promise.resolve(false);
     $('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-yes').textContent=confirmLabel;
@@ -278,7 +298,7 @@
     $('state-evidence').textContent=s?'需要的证据：'+s.evidence:'转移概率没有足够样本时保持未知。';
   }
   $('add-task').addEventListener('click',()=>openEditor());
-  $('editor-close').addEventListener('click',closeEditor);$('editor-cancel').addEventListener('click',closeEditor);
+  $('editor-close').addEventListener('click',()=>saveEditor(true));$('editor-cancel').addEventListener('click',cancelEditor);
   $('confirm-yes').addEventListener('click',()=>answer(true));$('confirm-no').addEventListener('click',()=>answer(false));
   $('confirm-dialog').addEventListener('cancel',e=>{e.preventDefault();answer(false);});
   $('undo').addEventListener('click',undo);$('toast-undo').addEventListener('click',undo);

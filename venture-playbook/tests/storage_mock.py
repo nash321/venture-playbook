@@ -29,7 +29,7 @@ def run(args):
         if args.browser:options['executable_path']=args.browser
         browser=p.chromium.launch(**options);page=browser.new_page()
         page.evaluate(MOCK);page.set_content(content);page.wait_for_selector('html.enhanced')
-        ok('可用存储显示正确信息','浏览器本地保存' in page.locator('#storage-message').inner_text())
+        ok('可用存储显示自动保存信息','浏览器自动保存' in page.locator('#storage-message').inner_text())
         page.locator('[data-task-id="T01"] .task-check').click()
         store=page.evaluate('window.__vpTestStore');entry=next(iter(store.values()));backup=json.loads(entry)
         ok('修改写入对应报告版本',backup['tasks'][0]['status']=='done')
