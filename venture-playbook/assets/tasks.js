@@ -166,11 +166,11 @@
       actions.append(up,down,button('编辑：'+t.title,'edit',()=>openEditor(t.id)),button('删除：'+t.title,'trash',()=>deleteTask(t.id)));
     }
     main.append(ck,middle,actions);row.append(main);
-    const details=el('details',{class:'task-details'});details.append(el('summary',{},'步骤、产物与验收'));
+    const details=el('details',{class:'task-details'});details.append(el('summary',{},'怎么做、做完检查什么'));
     const grid=el('div',{class:'task-detail-grid'});
     const labels={action:'怎么做',inputs:'先准备',tool:'工具与入口',deliverable:'交付什么',acceptance:'怎样算做完',on_failure:'失败怎么办',cost:'费用边界',notes:'我的备注'};
     for(const [k,label] of Object.entries(labels)) if(t[k]) {const n=el('div',{class:k==='action'||k==='notes'?'wide':''});n.append(el('span',{class:'mini-label'},label),el('p',{},t[k]));grid.append(n);}
-    const dep=el('div',{class:'wide'});dep.append(el('span',{class:'mini-label'},'任务编号与依赖'),el('p',{},t.id+' · 前置：'+(t.depends_on.join('、')||'无')));grid.append(dep);details.append(grid);row.append(details);return row;
+    const dep=el('div',{class:'wide'});dep.append(el('span',{class:'mini-label'},'任务编号与先后顺序'),el('p',{},t.id+' · 前置：'+(t.depends_on.join('、')||'无')));grid.append(dep);details.append(grid);row.append(details);return row;
   }
   function options(select,values,first) {
     const old=select.value;select.replaceChildren(el('option',{value:''},first));for(const v of values) select.append(el('option',{value:v},v));select.value=values.includes(old)?old:'';
