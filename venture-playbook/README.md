@@ -1,4 +1,4 @@
-# 项目研判 · Venture Playbook V9.1.16
+# 项目研判 · Venture Playbook V9.1.17
 
 把一篇创业复盘，变成小白也能读懂、查到依据、修改待办的报告。正文说人话，重要细节不省略；有逻辑链就用离线SVG图讲清楚。
 
@@ -6,7 +6,7 @@
 
 ## 安装与一句话调用
 
-从 [Gitee 正式发布页](https://gitee.com/cursorsome/venture-playbook/releases/tag/venture-playbook-v9.1.16) 取得完整安装包，把解压后的整个文件夹交给Agent，并说“安装并使用 venture-playbook”。Agent后台运行包内安装脚本，默认安装到对应宿主的**全局Skill目录**并配置生财MCP；客户不需要复制命令或操作配置。登录另行选择，不使用生财也可全网分析。手动安装须保留整个文件夹。
+从 [Gitee 正式发布页](https://gitee.com/cursorsome/venture-playbook/releases/tag/venture-playbook-v9.1.17) 取得完整安装包，把解压后的整个文件夹交给Agent，并说“安装并使用 venture-playbook”。Agent后台运行包内安装脚本，默认安装到对应宿主的**全局Skill目录**并配置生财MCP；客户不需要复制命令或操作配置。登录另行选择，不使用生财也可全网分析。手动安装须保留整个文件夹。
 
 - 默认适配：Codex、Claude Code、Cursor、Windsurf/Devin、Gemini CLI、OpenCode。
 - 已有兼容Python时安装离线完成；缺少运行环境时从固定国内镜像准备，支持重复运行，保留已有MCP与用户选择；登录时采用官方OAuth。

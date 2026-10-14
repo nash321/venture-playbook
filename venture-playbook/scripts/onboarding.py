@@ -49,12 +49,13 @@ def save(host, home, data):
 def status(host, home):
     data=load(host,home)
     return {**data,'authentication':'unknown','last_verified':data['authentication']=='verified',
-            'show_intro':not data['prompt_seen'],'mode':'web',
+            'show_intro':data['choice'] is None,'needs_choice':data['choice'] is None,'mode':'web',
             'poster_path':str(ROOT/'会员体验卡海报.jpg'),'trial_days':3}
 
 
-def choose(host, home, choice):
+def choose(host, home, choice, confirmed=False):
     if choice not in ('register','connect','skip'):raise ValueError('invalid_choice')
+    if choice=='skip' and confirmed is not True:raise ValueError('explicit_skip_confirmation_required')
     data=load(host,home)
     pending=activation_pending(data)
     if choice=='skip' and data['stage']!='done': data['resume_stage']=data['stage']
@@ -80,7 +81,7 @@ def step(host, home):
     elif stage=='authorize': message='请在当前生财授权页面点击“授权”或“允许”。完成后，回复“已授权”。'
     elif stage=='verify': message='我来检查生财资料是否已经可以读取，你无需操作。'
     elif stage=='done': message='已记住你的选择，我们继续分析项目。'
-    else: message='请选择：领取会员体验卡／连接生财资料／直接分析项目。'
+    else: message='是否现在连接生财资料（生财 MCP）？请选择：已有会员，登录连接／领取会员体验卡／暂不连接，直接分析。'
     receipt_path=setup.state_dir(home,host)/'setup-receipt.json'
     if (action or (host=='gemini' and stage=='login')) and receipt_path.is_file():
         saved=json.loads(receipt_path.read_text(encoding='utf-8'))
@@ -164,7 +165,7 @@ def main():
     p.add_argument('--confirmed',action='store_true')
     a=p.parse_args()
     try:
-        if a.action=='choose':result=choose(a.harness,a.home,a.choice)
+        if a.action=='choose':result=choose(a.harness,a.home,a.choice,a.confirmed)
         elif a.action=='activated':result=activated(a.harness,a.home,a.confirmed)
         elif a.action=='verified':result=verified(a.harness,a.home,json.loads(a.receipt.read_text(encoding='utf-8')))
         else:result=globals()[a.action](a.harness,a.home)

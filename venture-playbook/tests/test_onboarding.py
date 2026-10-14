@@ -141,6 +141,30 @@ class InstallTests(unittest.TestCase):
 
 
 class GuideTests(unittest.TestCase):
+    def test_silent_skip_is_rejected_without_writing_state(self):
+        before=guide.load('codex',self.home)
+        with self.assertRaisesRegex(ValueError,'explicit_skip_confirmation_required'):
+            guide.choose('codex',self.home,'skip')
+        self.assertEqual(guide.load('codex',self.home),before)
+        self.assertFalse((setup.state_dir(self.home,'codex')/'choice.json').exists())
+    def test_unanswered_prompt_stays_pending_across_status_reads(self):
+        for host in setup.HOSTS:
+            for _ in range(2):
+                self.assertTrue(guide.status(host,self.home)['needs_choice'])
+                self.assertIn('是否现在连接生财资料',guide.step(host,self.home)['instruction'])
+                self.assertEqual(guide.step(host,self.home)['agent_action'],[])
+    def test_explicit_skip_does_not_repeat_after_upgrade(self):
+        guide.choose('codex',self.home,'skip',confirmed=True)
+        setup.ensure('codex',self.home,install_skill=True)
+        self.assertFalse(guide.status('codex',self.home)['needs_choice'])
+        self.assertFalse(guide.status('codex',self.home)['show_intro'])
+    def test_cli_skip_requires_confirmation(self):
+        for confirmed,expected in [(False,2),(True,0)]:
+            argv=['onboarding.py','choose','--harness','codex','--home',str(self.home),'--choice','skip']
+            if confirmed:argv.append('--confirmed')
+            with patch.object(sys,'argv',argv),patch('sys.stdout',new_callable=io.StringIO):
+                self.assertEqual(guide.main(),expected)
+
     def test_customer_service_instruction_tells_customer_to_return_after_activation(self):
         guide.choose('codex',self.home,'register')
         result=guide.advance('codex',self.home)
@@ -154,7 +178,7 @@ class GuideTests(unittest.TestCase):
     def tearDown(self):self.temp.cleanup()
     def test_first_prompt_then_no_repeat(self):
         self.assertTrue(guide.status('codex',self.home)['show_intro'])
-        guide.choose('codex',self.home,'skip')
+        guide.choose('codex',self.home,'skip',confirmed=True)
         self.assertFalse(guide.status('codex',self.home)['show_intro'])
         self.assertEqual(guide.status('codex',self.home)['mode'],'web')
     def test_activated_trial_continues_login_one_step(self):
@@ -175,7 +199,7 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(result['stage'],'sign_in')
         self.assertEqual(guide.status('codex',self.home)['authentication'],'unknown')
     def test_skip_mid_guide_persists(self):
-        guide.choose('cursor',self.home,'register');guide.choose('cursor',self.home,'skip')
+        guide.choose('cursor',self.home,'register');guide.choose('cursor',self.home,'skip',confirmed=True)
         self.assertFalse(guide.status('cursor',self.home)['show_intro'])
     def test_readonly_receipt_required(self):
         guide.choose('codex',self.home,'connect')
@@ -186,7 +210,7 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(guide.status('codex',self.home)['authentication'],'unknown')
         self.assertTrue(guide.status('codex',self.home)['last_verified'])
     def test_state_is_outside_skill_and_upgrade_preserves_it(self):
-        guide.choose('gemini',self.home,'skip')
+        guide.choose('gemini',self.home,'skip',confirmed=True)
         setup.ensure('gemini',self.home,install_skill=True)
         self.assertFalse(guide.status('gemini',self.home)['show_intro'])
         self.assertNotIn('onboarding.json',[p.name for p in (self.home/'.gemini/skills/venture-playbook').rglob('*')])
@@ -205,12 +229,12 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(result['agent_action'],[])
     def test_skip_resume_keeps_exact_step(self):
         guide.choose('cursor',self.home,'register');guide.advance('cursor',self.home)
-        guide.choose('cursor',self.home,'skip')
+        guide.choose('cursor',self.home,'skip',confirmed=True)
         self.assertEqual(guide.step('cursor',self.home)['stage'],'done')
         self.assertEqual(guide.resume('cursor',self.home)['stage'],'contact_service')
     def test_resume_login_checks_connection_again(self):
         guide.choose('codex',self.home,'connect');guide.login('codex',self.home)
-        guide.choose('codex',self.home,'skip')
+        guide.choose('codex',self.home,'skip',confirmed=True)
         result=guide.resume('codex',self.home)
         self.assertEqual(result['stage'],'verify');self.assertEqual(result['agent_action'],[])
     def test_resume_without_skip_keeps_current_registration_step(self):
@@ -235,7 +259,7 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(guide.status('codex',self.home)['authentication'],'unknown')
     def test_skip_and_resume_do_not_bypass_activation(self):
         guide.choose('codex',self.home,'register');guide.advance('codex',self.home);guide.advance('codex',self.home)
-        guide.choose('codex',self.home,'skip')
+        guide.choose('codex',self.home,'skip',confirmed=True)
         self.assertEqual(guide.resume('codex',self.home)['stage'],'await_activation')
         with self.assertRaises(ValueError):guide.login('codex',self.home)
     def test_legacy_registration_state_still_requires_activation(self):
@@ -256,7 +280,7 @@ class GuideTests(unittest.TestCase):
         path.write_text('{}')
         with self.assertRaises(ValueError):guide.status('codex',self.home)
     def test_invalid_choice_or_resume_stage_is_explicit_error(self):
-        guide.choose('codex',self.home,'skip')
+        guide.choose('codex',self.home,'skip',confirmed=True)
         original=guide.load('codex',self.home)
         path=setup.state_dir(self.home,'codex')/'choice.json'
         for key,value in [('choice','unknown-choice'),('resume_stage','unknown-step'),('resume_stage',[])]:
