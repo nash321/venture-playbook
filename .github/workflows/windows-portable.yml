@@ -47,6 +47,45 @@ jobs:
           if (!(Test-Path $chrome)) { throw 'runner_chrome_not_available' }
           & $B -X utf8 (Join-Path $VP_SKILL 'tests/browser_smoke.py') --report 'temp/中文 空格/report.html' --browser $chrome --out temp/windows-browser
           if ($LASTEXITCODE -ne 0) { throw 'windows_browser_failed' }
+      - name: Browser close and reopen with real file storage
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $script=@'
+          import json, os
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright, expect
+          root=Path.cwd(); report=root/'temp/中文 空格/report.html'
+          profile=root/'temp/windows-reopen-profile'
+          chrome=Path(os.environ['ProgramFiles'])/'Google/Chrome/Application/chrome.exe'
+          checks=[]
+          with sync_playwright() as p:
+              def opened():
+                  ctx=p.chromium.launch_persistent_context(str(profile),headless=True,chromium_sandbox=True,executable_path=str(chrome))
+                  page=ctx.pages[0];page.goto(report.as_uri());page.wait_for_selector('html.enhanced')
+                  return ctx,page
+              ctx,page=opened();row=page.locator('#task-list .task-row').first
+              row.locator('button[aria-label^="编辑"]').click()
+              page.locator('#task-form [name="title"]').fill('Windows修改后重开检查')
+              page.locator('#task-form [name="title"]').press('Tab')
+              page.locator('#editor-close').click()
+              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              ctx.close()
+              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              checks.append('edit_restored_after_browser_process_restart')
+              page.locator('#task-list .task-row').first.locator('button[aria-label^="编辑"]').click()
+              page.locator('#task-form [name="title"]').fill('Windows撤销保存检查')
+              page.locator('#task-form [name="title"]').press('Tab')
+              page.locator('#editor-close').click();page.locator('#undo').click()
+              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              ctx.close()
+              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              checks.append('undo_restored_after_browser_process_restart');ctx.close()
+          (root/'temp/windows-reopen.json').write_text(json.dumps({'checks':checks,'operating_system':'windows','loading_mode':'file URL','real_process_restarts':2,'headless':True,'customer_foreground_or_oauth_verified':False},ensure_ascii=False,indent=2),encoding='utf-8')
+          '@
+          $script | Set-Content -LiteralPath temp/windows-reopen.py -Encoding UTF8
+          & temp/browser-env/Scripts/python.exe -X utf8 temp/windows-reopen.py
+          if ($LASTEXITCODE -ne 0) { throw 'windows_reopen_failed' }
       - name: Keep exact evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,3 +94,4 @@ jobs:
           path: |
             temp/bootstrap-*.json
             temp/windows-browser/
+            temp/windows-reopen.json
