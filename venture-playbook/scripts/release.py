@@ -11,7 +11,7 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 ALLOW={
-'SKILL.md','README.md','START-HERE.html','USAGE.md','CHANGELOG.md','RELEASE-NOTES.md',
+'SKILL.md','README.md','START-HERE.html','USAGE.md','CHANGELOG.md','RELEASE-NOTES.md','LICENSE','NOTICE',
 'agents/openai.yaml','assets/brand.json','assets/report.css','assets/tasks.js',
 'assets/referral-card.html','assets/referral-footer.html','assets/runtime-policy.json',
 'scripts/venture.py','scripts/release.py',

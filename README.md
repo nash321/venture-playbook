@@ -8,6 +8,8 @@
 
 缺少运行环境时，固定从清华 PyPI 镜像取得 uv、从 npmmirror 取得 Python；不会改为 GitHub 下载。镜像和 Gitee 仍需客户网络可达。生财资料连接为可选功能，登录和授权由客户本人按宿主官方流程完成。
 
+代码、测试和原创文档采用 [Apache-2.0](LICENSE)；会员体验卡海报、二维码、第三方标识及引用材料不在该授权内，见 [NOTICE](NOTICE)。
+
 ## 维护和验收
 
 Gitee 是客户分发和自动更新源；[GitHub 仓库](https://github.com/nash321/venture-playbook)只保存维护代码并运行 Windows 云端测试，不属于客户使用链路。正式版本以 `venture-playbook-v9.1.16` 标签和发布附件为准；开发分支、源码快照和测试回执不能冒充正式安装包。
