@@ -33,7 +33,7 @@ def run(args):
         count=rows.count()
         passed('真实DOM加载并增强',count>0 and page.locator('h1').inner_text()!='')
         passed('桌面没有页面级横向溢出',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
-        passed('没有外部网络请求',not requests)
+        passed('没有外部网络请求',all(u.startswith(('file:','data:','blob:')) for u in requests))
         if args.markup:passed('存储受限时明确提示而不假保存','仅本次打开有效' in page.locator('#storage-message').inner_text())
         page.screenshot(path=str(out/'desktop-cover.png'))
         original_source=page.locator('#source').inner_text()
@@ -223,7 +223,7 @@ def run(args):
             static_removed=static_ctx.new_page();static_removed.set_content(removed_html,wait_until='load')
             passed('禁用脚本时保存副本仍显示任务已删除',static_removed.locator('[data-task-id="'+example_id+'"].task-row').count()==0 and '已从当前计划删除' in static_removed.locator('#action-example-note').inner_text())
         passed('没有相关浏览器错误',not errors)
-        passed('没有运行期外部请求',not requests)
+        passed('没有运行期外部请求',all(u.startswith(('file:','data:','blob:')) for u in requests))
         browser.close()
     result={'engine':'sandboxed Chromium','loading_mode':'trusted markup via set_content' if args.markup else 'file URL','viewports':['1440x1000','390x844'],'checks':results,'errors':errors,'native_file_storage_tested':not args.markup,'cross_harness_installation_tested':False}
     (out/'browser-results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
