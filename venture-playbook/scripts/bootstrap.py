@@ -48,9 +48,13 @@ def windows_path(home,entry,registry=None):
         try:current,current_kind=registry.QueryValueEx(key,'Path')
         except FileNotFoundError:current,current_kind=None,kind
         if current!=old or current_kind!=kind:raise ValueError('path_concurrent_change')
-        registry.SetValueEx(key,'Path',0,kind,new)
-        if registry.QueryValueEx(key,'Path')!=(new,kind):raise ValueError('user_path_readback_failed')
-    return {'changed':True,'kind':'registry','registry':registry,'old':old,'new':new,'type':kind,'backup':str(backup)}
+        token={'changed':True,'kind':'registry','registry':registry,'old':old,'new':new,'type':kind,'backup':str(backup)}
+        try:
+            registry.SetValueEx(key,'Path',0,kind,new)
+            if registry.QueryValueEx(key,'Path')!=(new,kind):raise ValueError('user_path_readback_failed')
+        except (OSError,ValueError):
+            restore_path(token);raise
+    return token
 
 
 def enable_path(home,python):
@@ -74,8 +78,10 @@ def enable_path(home,python):
         new=(pattern.sub(lambda _:block,text) if BEGIN in text else text+('' if not text or text.endswith('\n') else '\n')+block).encode('utf-8')
         backups=setup.state_dir(home,'runtime')/'backups'
         setup.reject_symlinks(backups,home)
-        changed=setup.atomic_write(path,new,old,backups)
-        token={'changed':changed,'kind':'profile','path':path,'old':old,'new':new,'backups':backups}
+        token={'changed':old!=new,'kind':'profile','path':path,'old':old,'new':new,'backups':backups}
+        try:token['changed']=setup.atomic_write(path,new,old,backups)
+        except (OSError,ValueError):
+            restore_path(token);raise
     before=os.environ.get('PATH','');separator=';' if os.name=='nt' else ':'
     if entry not in before.split(separator):os.environ['PATH']=before+(separator if before else '')+entry
     return {**token,'entry':entry,'process_before':before,'process_after':os.environ.get('PATH','')}
@@ -85,15 +91,20 @@ def restore_path(token):
     if token.get('changed'):
         if token['kind']=='profile':
             path=token['path']
-            if path.read_bytes()!=token['new']:raise ValueError('path_rollback_conflict')
-            if token['old'] is None:path.unlink()
-            else:setup.atomic_write(path,token['old'],token['new'],token['backups'])
+            current=path.read_bytes() if path.exists() else None
+            if current!=token['old']:
+                if current!=token['new']:raise ValueError('path_rollback_conflict')
+                if token['old'] is None:path.unlink()
+                else:setup.atomic_write(path,token['old'],token['new'],token['backups'])
         else:
             r=token['registry']
             with r.CreateKeyEx(r.HKEY_CURRENT_USER,'Environment',0,r.KEY_READ|r.KEY_WRITE) as key:
-                if r.QueryValueEx(key,'Path')!=(token['new'],token['type']):raise ValueError('path_rollback_conflict')
-                if token['old'] is None:r.DeleteValue(key,'Path')
-                else:r.SetValueEx(key,'Path',0,token['type'],token['old'])
+                try:current=r.QueryValueEx(key,'Path')
+                except FileNotFoundError:current=(None,token['type'])
+                if current!=(token['old'],token['type']):
+                    if current!=(token['new'],token['type']):raise ValueError('path_rollback_conflict')
+                    if token['old'] is None:r.DeleteValue(key,'Path')
+                    else:r.SetValueEx(key,'Path',0,token['type'],token['old'])
     if os.environ.get('PATH','')==token.get('process_after'):os.environ['PATH']=token['process_before']
 
 

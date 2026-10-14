@@ -83,6 +83,52 @@ class BootstrapTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'path_rollback_conflict'):b.restore_path(token)
         self.assertIn('user edit',r.value)
 
+    def test_windows_write_readback_failure_restores_original_path(self):
+        class OnceFailingRegistry(Registry):
+            reads=0
+            def QueryValueEx(self,*args):
+                self.reads+=1
+                if self.reads==3:raise OSError('injected_readback_failure')
+                return super().QueryValueEx(*args)
+        r=OnceFailingRegistry('customer-original')
+        with self.assertRaisesRegex(OSError,'injected_readback_failure'):
+            b.windows_path(self.home,r'C:\Managed Python',r)
+        self.assertEqual(r.value,'customer-original')
+
+    def test_windows_write_failure_preserves_concurrent_change(self):
+        class ConcurrentRegistry(Registry):
+            reads=0
+            def QueryValueEx(self,*args):
+                self.reads+=1
+                if self.reads==3:
+                    self.value+=';customer-concurrent-change'
+                    raise OSError('injected_readback_failure')
+                return super().QueryValueEx(*args)
+        r=ConcurrentRegistry('customer-original')
+        with self.assertRaisesRegex(ValueError,'path_rollback_conflict'):
+            b.windows_path(self.home,r'C:\Managed Python',r)
+        self.assertIn('customer-concurrent-change',r.value)
+
+    def test_profile_write_readback_failure_restores_original_bytes(self):
+        p=self.home/'.zprofile';old=b'# customer original\n';p.write_bytes(old)
+        real_write=b.setup.atomic_write
+        def fail_after_write(path,content,expected,backups):
+            changed=real_write(path,content,expected,backups)
+            if path==p and content!=old:raise OSError('injected_readback_failure')
+            return changed
+        with patch.dict(b.os.environ,{'SHELL':'/bin/zsh','PATH':'/usr/bin'}),patch.object(b.setup,'atomic_write',side_effect=fail_after_write):
+            with self.assertRaisesRegex(OSError,'injected_readback_failure'):
+                b.enable_path(self.home,self.python)
+        self.assertEqual(p.read_bytes(),old)
+
+    def test_windows_write_failure_before_change_keeps_original(self):
+        class UnwritableRegistry(Registry):
+            def SetValueEx(self,*args):raise PermissionError('injected_write_denied')
+        r=UnwritableRegistry('customer-original')
+        with self.assertRaisesRegex(PermissionError,'injected_write_denied'):
+            b.windows_path(self.home,r'C:\Managed Python',r)
+        self.assertEqual(r.value,'customer-original')
+
 class Registry:
     HKEY_CURRENT_USER='current-user';KEY_READ=1;KEY_WRITE=2;REG_SZ=1;REG_EXPAND_SZ=2
     def __init__(self,value):self.value=value;self.kind=self.REG_EXPAND_SZ;self.hives=[]
