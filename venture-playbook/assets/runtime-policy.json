@@ -1,0 +1,33 @@
+{
+  "uv_version": "0.13.0",
+  "python_version": "3.12.14",
+  "runtime_home": ".local/share/venture-playbook/runtime",
+  "source": "https://github.com/astral-sh/uv/releases/tag/0.13.0",
+  "artifacts": {
+    "aarch64-apple-darwin": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-aarch64-apple-darwin.tar.gz",
+      "sha256": "a9c1b29002cf3c83f07fa9cd8a887a3be0107d90e23189721221e7257db8e3d6",
+      "archive": "uv-aarch64-apple-darwin.tar.gz"
+    },
+    "x86_64-apple-darwin": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-x86_64-apple-darwin.tar.gz",
+      "sha256": "5f44dcbde809b632f47c36fadb241cb4d6f9af71d0c8f172b5d2026d3dde742c",
+      "archive": "uv-x86_64-apple-darwin.tar.gz"
+    },
+    "aarch64-pc-windows-msvc": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-aarch64-pc-windows-msvc.zip",
+      "sha256": "cb54028b59aa87f11cf6dec293ce000420043a49a8aea522e822a671321f8932",
+      "archive": "uv-aarch64-pc-windows-msvc.zip"
+    },
+    "x86_64-pc-windows-msvc": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "088962f9e7b7bd9ea740c04c650b2a21c8928c345bd99ac24350dc924dba656c",
+      "archive": "uv-x86_64-pc-windows-msvc.zip"
+    },
+    "i686-pc-windows-msvc": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-i686-pc-windows-msvc.zip",
+      "sha256": "5fca2da976672231e3dcc1d81bb1059781dea3915715fe8f000a916886d183cb",
+      "archive": "uv-i686-pc-windows-msvc.zip"
+    }
+  }
+}
