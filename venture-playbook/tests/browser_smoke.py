@@ -16,7 +16,9 @@ def run(args):
     out=args.out.resolve();out.mkdir(parents=True,exist_ok=True)
     results=[];errors=[];requests=[]
     def passed(name,condition=True):
-        if not condition:raise AssertionError(name)
+        if not condition:
+            (out/'browser-failure.json').write_text(json.dumps({'failed_check':name,'errors':errors,'requests':requests,'passed_checks':results},ensure_ascii=False,indent=2),encoding='utf-8')
+            raise AssertionError(name)
         results.append({'check':name,'result':'PASS'})
     with sync_playwright() as p:
         launch={'headless':True,'chromium_sandbox':True}
@@ -35,7 +37,7 @@ def run(args):
         passed('桌面没有页面级横向溢出',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
         passed('没有外部网络请求',all(u.startswith(('file:','data:','blob:')) for u in requests))
         if args.markup:passed('存储受限时明确提示而不假保存','仅本次打开有效' in page.locator('#storage-message').inner_text())
-        page.screenshot(path=str(out/'desktop-cover.png'))
+        page.screenshot(path=str(out/'desktop-cover.png'),caret='initial')
         original_source=page.locator('#source').inner_text()
         reading_guide=page.locator('#reading-guide')
         if reading_guide.count():
@@ -45,10 +47,10 @@ def run(args):
             question.locator('summary').click()
             passed('理解自检展开答案并能回查章节',question.locator('.case-body').is_visible() and page.locator(question.locator('a').get_attribute('href')).count()==1)
             page.locator('#reader-check').evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-            page.screenshot(path=str(out/'desktop-reader-check.png'))
+            page.screenshot(path=str(out/'desktop-reader-check.png'),caret='initial')
             question.locator('summary').click()
             reading_guide.evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-            page.screenshot(path=str(out/'desktop-reading-guide.png'))
+            page.screenshot(path=str(out/'desktop-reading-guide.png'),caret='initial')
         # Edits are committed without submitting; one editor session is one undo.
         auto_row=rows.first;auto_title=auto_row.locator('h4').inner_text()
         auto_row.locator('button[aria-label^="编辑"]').click()
@@ -154,7 +156,7 @@ def run(args):
             changed={'schema_version':1,'report_id':payload['report_id'],'tasks':remaining,'selected_state':'S1'}
             edge.locator('#import-file').set_input_files({'name':'removed-example.json','mimeType':'application/json','buffer':json.dumps(changed).encode()});edge.locator('#confirm-yes').click()
             passed('导入删除任务的备份后示例明确标记',edge.locator('[data-task-id="'+example_id+'"].task-row').count()==0 and '已从当前计划删除' in edge.locator('#action-example-note').inner_text())
-            edge.locator('#action-example').scroll_into_view_if_needed();edge.screenshot(path=str(out/'desktop-deleted-example.png'))
+            edge.locator('#action-example').scroll_into_view_if_needed();edge.screenshot(path=str(out/'desktop-deleted-example.png'),caret='initial')
             with edge.expect_download() as dl:edge.locator('[data-save-html]').first.click()
             removed_path=out/'removed-example-saved.html';dl.value.save_as(removed_path)
             removed_html=removed_path.read_text('utf-8')
@@ -192,28 +194,28 @@ def run(args):
         passed('打印后回到原筛选',rows.count()==1)
         page.locator('#reset-filters').click()
         page.locator('#actions').evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-        page.screenshot(path=str(out/'desktop-actions.png'))
-        page.locator('#add-task').click();page.screenshot(path=str(out/'desktop-editor.png'));page.locator('#editor-cancel').click()
+        page.screenshot(path=str(out/'desktop-actions.png'),caret='initial')
+        page.locator('#add-task').click();page.screenshot(path=str(out/'desktop-editor.png'),caret='initial');page.locator('#editor-cancel').click()
         page.locator('#cases').evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-        page.screenshot(path=str(out/'desktop-comparison.png'))
+        page.screenshot(path=str(out/'desktop-comparison.png'),caret='initial')
         # Mobile real layout and editing, no browser spoofing or security changes.
         mobile=browser.new_context(viewport={'width':390,'height':844},has_touch=True,accept_downloads=True)
         mp=mobile.new_page();mp.on('pageerror',lambda e:errors.append(str(e)));mp.set_content(content,wait_until='load');mp.wait_for_selector('html.enhanced')
         passed('手机没有页面级横向溢出',mp.evaluate('document.documentElement.scrollWidth<=innerWidth'))
-        mp.screenshot(path=str(out/'mobile-cover.png'))
+        mp.screenshot(path=str(out/'mobile-cover.png'),caret='initial')
         if mp.locator('#reading-guide').count():
             mp.locator('#reading-guide').evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-            mp.screenshot(path=str(out/'mobile-reading-guide.png'))
+            mp.screenshot(path=str(out/'mobile-reading-guide.png'),caret='initial')
         mp.locator('#actions').evaluate("el=>el.scrollIntoView({block:'start',behavior:'instant'})")
-        mp.screenshot(path=str(out/'mobile-actions.png'))
+        mp.screenshot(path=str(out/'mobile-actions.png'),caret='initial')
         mobile_rows=mp.locator('#task-list .task-row');mobile_first=mobile_rows.first.get_attribute('data-task-id')
         touch_move=mobile_rows.first.locator('button[aria-label^="下移"]');box=touch_move.bounding_box()
         touch_move.tap()
         passed('手机触摸下移与44像素按钮',mobile_rows.nth(1).get_attribute('data-task-id')==mobile_first and box['width']>=44 and box['height']>=44)
-        mobile_rows.nth(1).scroll_into_view_if_needed();mp.screenshot(path=str(out/'mobile-sort.png'))
+        mobile_rows.nth(1).scroll_into_view_if_needed();mp.screenshot(path=str(out/'mobile-sort.png'),caret='initial')
         mp.locator('#add-task').click();mp.locator('#task-form [name="title"]').fill('手机编辑可用')
         passed('手机编辑弹窗可见且接受输入',mp.locator('#task-dialog').is_visible() and mp.locator('#task-form [name="title"]').input_value()=='手机编辑可用')
-        mp.screenshot(path=str(out/'mobile-editor.png'));mp.locator('#editor-cancel').click()
+        mp.screenshot(path=str(out/'mobile-editor.png'),caret='initial');mp.locator('#editor-cancel').click()
         # No JavaScript: full research and static tasks remain readable.
         static_ctx=browser.new_context(java_script_enabled=False)
         sp=static_ctx.new_page();sp.set_content(saved,wait_until='load')

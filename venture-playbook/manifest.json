@@ -36,7 +36,7 @@
     "scripts/release.py": "09f2377f6081ffb5bab25c7203bfed6397bed1d0392143505fd7b4dc3e68d8a9",
     "scripts/setup.py": "d1d0ed51bb8a0bb3e3ab13dc0027584f68666ab8b21f14ec78f77dd10569a09b",
     "scripts/venture.py": "47eb8f8268e0a1616f0f9849399a023b9501555a1135519d0933443bd36fd273",
-    "tests/browser_smoke.py": "a0e7d18ebf19b3bc6d5959af5f0def069e6e361b4ed5a2690916f7538ae6517d",
+    "tests/browser_smoke.py": "40a6d444fbf2e9704c191484baf6b759bba7d0df44f2deb48c4e6f2102fe5ff9",
     "tests/storage_mock.py": "f6c08dfe6347a0e06ec724a53ea31526ebee0e653998ac9ae6082e1a59a654e4",
     "tests/test_bootstrap.py": "ae0142afa7df493e154aaeda96c1d753a7296e5e570dbcafafabf2f98ae2bbe4",
     "tests/test_onboarding.py": "d8bdf2e3a13d1b5aad23025bb213fdffd80891b24c7c105a456039f129a37f09",
