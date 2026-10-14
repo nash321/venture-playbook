@@ -1,0 +1,57 @@
+name: Windows portable acceptance
+on:
+  push:
+    branches: ['codex/presale-9.1.15']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native Windows bootstrap and repeat
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $VP_SKILL=Join-Path $env:GITHUB_WORKSPACE 'venture-playbook'
+          $VP_HARNESS='codex'
+          $VP_REPORT=Join-Path $env:GITHUB_WORKSPACE 'temp/bootstrap-first.json'
+          New-Item -ItemType Directory -Force (Split-Path $VP_REPORT) | Out-Null
+          $guide=Get-Content -LiteralPath (Join-Path $VP_SKILL 'references/RUNTIME-BOOTSTRAP.md') -Raw -Encoding UTF8
+          $entry=[regex]::Match($guide,'(?s)```powershell\s*(.*?)```').Groups[1].Value
+          if (!$entry) { throw 'missing_native_entry' }
+          & ([scriptblock]::Create($entry))
+          $first=Get-Content -LiteralPath $VP_REPORT -Raw -Encoding UTF8 | ConvertFrom-Json
+          if (!$first.ready -or !$first.setup.configured -or $first.platform.system -ne 'windows') { throw 'first_bootstrap_failed' }
+          $P=$first.python
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/bootstrap.py') --harness codex --managed --report temp/bootstrap-repeat.json
+          if ($LASTEXITCODE -ne 0) { throw 'repeat_bootstrap_failed' }
+          $repeat=Get-Content temp/bootstrap-repeat.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($repeat.user_path_added -or $repeat.setup.changed) { throw 'repeat_not_idempotent' }
+          $userPath=[Environment]::GetEnvironmentVariable('Path','User')
+          if (!(($userPath -split ';') -contains $first.path_entry)) { throw 'user_path_not_persisted' }
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') doctor
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') build (Join-Path $VP_SKILL 'examples/project-demo.json') --out 'temp/中文 空格/report.html'
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') check 'temp/中文 空格/report.html'
+          if ($LASTEXITCODE -ne 0) { throw 'report_check_failed' }
+          $env:VP_ACCEPTANCE_PYTHON=$P
+          & $P -m venv temp/browser-env
+          $B=Join-Path $env:GITHUB_WORKSPACE 'temp/browser-env/Scripts/python.exe'
+          & $B -m pip install --disable-pip-version-check playwright==1.40.0
+          if ($LASTEXITCODE -ne 0) { throw 'browser_test_dependency_failed' }
+          $chrome=Join-Path ${env:ProgramFiles} 'Google/Chrome/Application/chrome.exe'
+          if (!(Test-Path $chrome)) { throw 'runner_chrome_not_available' }
+          & $B -X utf8 (Join-Path $VP_SKILL 'tests/browser_smoke.py') --report 'temp/中文 空格/report.html' --browser $chrome --out temp/windows-browser
+          if ($LASTEXITCODE -ne 0) { throw 'windows_browser_failed' }
+      - name: Keep exact evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable-evidence
+          path: |
+            temp/bootstrap-*.json
+            temp/windows-browser/
