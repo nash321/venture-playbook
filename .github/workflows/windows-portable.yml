@@ -35,8 +35,8 @@ jobs:
           $userPath=[Environment]::GetEnvironmentVariable('Path','User')
           if (!(($userPath -split ';') -contains $first.path_entry)) { throw 'user_path_not_persisted' }
           & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') doctor
-          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') build (Join-Path $VP_SKILL 'examples/project-demo.json') --out 'temp/中文 空格/report.html'
-          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') check 'temp/中文 空格/report.html'
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') build (Join-Path $VP_SKILL 'examples/project-demo.json') --out 'temp/customer space/report.html'
+          & $P -I -X utf8 (Join-Path $VP_SKILL 'scripts/venture.py') check 'temp/customer space/report.html'
           if ($LASTEXITCODE -ne 0) { throw 'report_check_failed' }
           $env:VP_ACCEPTANCE_PYTHON=$P
           & $P -m venv temp/browser-env
@@ -45,17 +45,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'browser_test_dependency_failed' }
           $chrome=Join-Path ${env:ProgramFiles} 'Google/Chrome/Application/chrome.exe'
           if (!(Test-Path $chrome)) { throw 'runner_chrome_not_available' }
-          & $B -X utf8 (Join-Path $VP_SKILL 'tests/browser_smoke.py') --report 'temp/中文 空格/report.html' --browser $chrome --out temp/windows-browser
+          & $B -X utf8 (Join-Path $VP_SKILL 'tests/browser_smoke.py') --report 'temp/customer space/report.html' --browser $chrome --out temp/windows-browser
           if ($LASTEXITCODE -ne 0) { throw 'windows_browser_failed' }
       - name: Browser close and reopen with real file storage
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
           $script=@'
-          import json, os
+          import json, os, shutil
           from pathlib import Path
           from playwright.sync_api import sync_playwright, expect
-          root=Path.cwd(); report=root/'temp/中文 空格/report.html'
+          root=Path.cwd(); report=root/'temp/\u4e2d\u6587 \u7a7a\u683c/report.html'
+          report.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(root/'temp/customer space/report.html',report)
           profile=root/'temp/windows-reopen-profile'
           chrome=Path(os.environ['ProgramFiles'])/'Google/Chrome/Application/chrome.exe'
           checks=[]
@@ -65,21 +66,21 @@ jobs:
                   page=ctx.pages[0];page.goto(report.as_uri());page.wait_for_selector('html.enhanced')
                   return ctx,page
               ctx,page=opened();row=page.locator('#task-list .task-row').first
-              row.locator('button[aria-label^="编辑"]').click()
-              page.locator('#task-form [name="title"]').fill('Windows修改后重开检查')
+              row.locator('button[aria-label^="\u7f16\u8f91"]').click()
+              page.locator('#task-form [name="title"]').fill('Windows\u4fee\u6539\u540e\u91cd\u5f00\u68c0\u67e5')
               page.locator('#task-form [name="title"]').press('Tab')
               page.locator('#editor-close').click()
-              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows\u4fee\u6539\u540e\u91cd\u5f00\u68c0\u67e5')
               ctx.close()
-              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows\u4fee\u6539\u540e\u91cd\u5f00\u68c0\u67e5')
               checks.append('edit_restored_after_browser_process_restart')
-              page.locator('#task-list .task-row').first.locator('button[aria-label^="编辑"]').click()
-              page.locator('#task-form [name="title"]').fill('Windows撤销保存检查')
+              page.locator('#task-list .task-row').first.locator('button[aria-label^="\u7f16\u8f91"]').click()
+              page.locator('#task-form [name="title"]').fill('Windows\u64a4\u9500\u4fdd\u5b58\u68c0\u67e5')
               page.locator('#task-form [name="title"]').press('Tab')
               page.locator('#editor-close').click();page.locator('#undo').click()
-              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows\u4fee\u6539\u540e\u91cd\u5f00\u68c0\u67e5')
               ctx.close()
-              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows修改后重开检查')
+              ctx,page=opened();expect(page.locator('#task-list .task-row').first.locator('h4')).to_have_text('Windows\u4fee\u6539\u540e\u91cd\u5f00\u68c0\u67e5')
               checks.append('undo_restored_after_browser_process_restart');ctx.close()
           (root/'temp/windows-reopen.json').write_text(json.dumps({'checks':checks,'operating_system':'windows','loading_mode':'file URL','real_process_restarts':2,'headless':True,'customer_foreground_or_oauth_verified':False},ensure_ascii=False,indent=2),encoding='utf-8')
           '@
