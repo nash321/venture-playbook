@@ -1,40 +1,17 @@
 # 生财拆解 Skill · Venture Playbook
 
-把创业文章、项目链接和经营复盘整理成可离线阅读的 HTML 报告，结合公开资料作比较，并提供可编辑、可调整顺序的行动清单。
+把创业文章、项目链接和经营复盘整理成有来源的研究报告与可编辑行动清单。完整使用规则见 [SKILL.md](venture-playbook/SKILL.md)。
 
-这个仓库用于项目开发、版本管理和回滚。客户安装说明见 [Skill README](venture-playbook/README.md)，实际使用规则见 [SKILL.md](venture-playbook/SKILL.md)。
+## 客户安装和更新
 
-两个远端均为私有仓库，保存同一份开发历史与正式版本标签：
+客户只使用 [Gitee 正式发布页](https://gitee.com/cursorsome/venture-playbook/releases/tag/venture-playbook-v9.1.16) 的 9.1.16 安装包。下载、解压后，把整个 `venture-playbook` 文件夹交给 Agent，说“安装并使用 venture-playbook”；安装步骤见 [客户说明](venture-playbook/README.md)。首次使用无需 GitHub 账号或 GitHub 凭据。之后每次调用从公开 Gitee 仓库匿名检查正式标签，有更高版本才按清单逐文件校验、更新。
 
-| 平台 | 仓库 | 本地远端名 |
-|---|---|---|
-| Gitee | [cursorsome/venture-playbook](https://gitee.com/cursorsome/venture-playbook) | `origin` |
-| GitHub | [nash321/venture-playbook](https://github.com/nash321/venture-playbook) | `github` |
+缺少运行环境时，固定从清华 PyPI 镜像取得 uv、从 npmmirror 取得 Python；不会改为 GitHub 下载。镜像和 Gitee 仍需客户网络可达。生财资料连接为可选功能，登录和授权由客户本人按宿主官方流程完成。
 
-## 版本状态
+## 维护和验收
 
-- 本次发布版本：`venture-playbook-v9.1.5`，源码分支`codex/share-at-start`；安装包及校验文件见[GitHub Release](https://github.com/nash321/venture-playbook/releases/tag/venture-playbook-v9.1.5)。旧9.1.1标签保留供回滚。
-- 9.1.5在9.1.2基础上增加编辑与撤销自动存浏览器、报告自动浏览器打开以及开头分享区。102项单元、15项分享区专项浏览器检查通过；首次使用与关闭重启恢复另有9.1.4实际验收。仓库未配置GitHub Actions，不冒称云端CI或独立网页复核通过。
-- 9.1.2云端候选验收（历史）：包含待办排序与保存恢复、不接入专用判断服务的规则，以及白话导读、术语解释、动作示例和理解自检。云端复查修复示例删除说明与撤销后的阶段显示，101项单元、冻结96项旧测试及两份报告各58项浏览器检查通过；历史结果不当作本机本轮证据，真实读者测试单独记录。
-- `master` 保存最新开发进度；正式版本以对应标签为准。推送代码不等于发布安装包。
+Gitee 是客户分发和自动更新源；[GitHub 仓库](https://github.com/nash321/venture-playbook)只保存维护代码并运行 Windows 云端测试，不属于客户使用链路。正式版本以 `venture-playbook-v9.1.16` 标签和发布附件为准；开发分支、源码快照和测试回执不能冒充正式安装包。
 
-安装9.1.5请从上述Release下载`venture-playbook-v9.1.5.zip`，或检出对应标签。9.1.2测试分支保留历史；本次按用户要求只发布到GitHub，Gitee未同步9.1.5。
+本版包含 9.1.5 之后的报告表达和保存改进、跨系统运行环境准备、公开 Gitee 自动更新。156 项本地单元测试和 Windows 云端运行检查已通过；Windows 云端执行器不能代表每位客户的设备、前台浏览器或本人 OAuth。陌生材料研究的单次实际报告见项目本地验收材料，不随客户包分发。
 
-## 目录
-
-| 路径 | 内容 |
-|---|---|
-| `venture-playbook/` | 可分发 Skill 源码、参考规则、安装器、报告生成器和测试 |
-| `实战验收/` | FDE 精华帖的研究报告和项目数据；经营判断仍有待核内容 |
-| `agent.md`、`memory.md`、`progress.md` | 项目规则、要求和持续进度 |
-| `temp/` | 本地过程文件、回执和回滚快照，不提交 |
-
-## 维护约定
-
-按已确认范围修改，检查差异后提交具体文件。正式版本建立标签并保留回滚快照；每次同步分别推送两个远端，再比对本地与两边的提交和标签。`master` 继续跟踪 `origin/master`。
-
-不提交个人认证凭据、原始付费文章、运行日志或客户引导状态。安装包可由对应版本源码生成，ZIP 不直接进入代码历史。仓库默认使用私有可见性，公开分享需另行明确。
-
-不集成或调用 Jev。验收使用宿主已有能力、脚本检查、浏览器实测和证据回读；功能测试不证明真实客户已理解报告，也不证明商业收益。
-
-云端托管checkout的origin指向GitHub；原开发机origin/Gitee、github/GitHub的约定保留。本轮不改托管远端。云端测试与客户设备安装、原生OAuth、领取权益分别记录于progress.md；缺原始材料时不重新宣称原文核验通过。
+项目过程与测试文件保存在根目录 `temp/`，不提交。客户包只包含白名单内的 Skill 文件，不含开发规则、个人凭据、原始付费材料或客户状态。Git 标签和历史用于版本回滚，不强推或覆盖旧标签。
