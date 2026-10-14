@@ -87,6 +87,15 @@ class InstallTests(unittest.TestCase):
         with patch.object(setup.os,'replace',side_effect=OSError('test failure')):
             with self.assertRaises(OSError):setup.ensure('cursor',self.home)
         self.assertEqual(path.read_bytes(),before)
+    def test_old_package_does_not_overwrite_newer_global_install(self):
+        setup.ensure('cursor',self.home,install_skill=True)
+        skill=setup.host_paths('cursor',self.home)[0]
+        path=skill/'manifest.json';data=json.loads(path.read_text());data['version']='99.0.0'
+        path.write_text(json.dumps(data))
+        before={str(p.relative_to(self.home)):p.read_bytes() for p in self.home.rglob('*') if p.is_file()}
+        with self.assertRaisesRegex(ValueError,'installed_newer_use_global_skill'):
+            setup.ensure('cursor',self.home,install_skill=True)
+        self.assertEqual(before,{str(p.relative_to(self.home)):p.read_bytes() for p in self.home.rglob('*') if p.is_file()})
     def test_detect_ambiguous_needs_one_choice(self):
         (self.home/'.cursor').mkdir();(self.home/'.gemini').mkdir()
         with patch.dict(setup.os.environ,{},clear=True), self.assertRaises(ValueError):setup.detect(self.home)

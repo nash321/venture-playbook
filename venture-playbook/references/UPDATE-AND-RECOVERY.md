@@ -2,7 +2,7 @@
 
 同一项目保持report_id，修订不复制私有全局配置，不重建无关研究。先定位用户需要改的是事实、表达、结构还是行动。只补对应证据，不为改一个按钮重新扫描全网。
 
-客户已改待办时，先请其提供备份JSON或“保存完整报告”后的文件。已有同项目project.json时，使用现有merge-tasks导入JSON备份或保存的HTML到新project.json，默认不覆盖原文件。HTML只提取vp-data中的当前待办及所选状态，绝不执行其中脚本或将报告备注当正文；校验项目编号、任务结构及状态后再生成。
+客户已改待办时，先保留最新进度：优先使用客户已经提供的备份JSON或“保存完整报告”文件；能操作当前报告浏览器时，由Agent先协助保存完整报告或导出待办并读回。只有当前浏览器和最新副本都无法取得时，才请客户提供一次。不能拿旧project.json或原HTML代替仍只存在浏览器中的最新进度。已有同项目project.json时，使用现有merge-tasks导入JSON备份或保存的HTML到新project.json，默认不覆盖原文件。HTML只提取vp-data中的当前待办及所选状态，绝不执行其中脚本或将报告备注当正文；校验项目编号、任务结构及状态后再生成。
 
 ```sh
 python <Skill>/scripts/venture.py merge-tasks ./project.json --tasks ./saved-report.html --out ./project-updated.json

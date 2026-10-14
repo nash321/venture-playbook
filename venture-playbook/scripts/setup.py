@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sys
 import tempfile
@@ -93,6 +94,17 @@ def ensure(host, home, install_skill=False):
     skill,config=host_paths(host,home)
     state = state_dir(home, host)
     reject_symlinks(config, home); reject_symlinks(skill, home); reject_symlinks(state, home)
+    if install_skill and skill.resolve() != ROOT and (skill/'manifest.json').exists():
+        reject_symlinks(skill/'manifest.json', home)
+        versions = []
+        for path in (skill/'manifest.json', ROOT/'manifest.json'):
+            item = json.loads(path.read_text(encoding='utf-8'))
+            if not isinstance(item, dict): raise ValueError('invalid_install_manifest')
+            value = item.get('version', '')
+            if item.get('name') != 'venture-playbook' or not isinstance(value, str) or not re.fullmatch(r'\d+\.\d+\.\d+', value):
+                raise ValueError('invalid_install_manifest')
+            versions.append(tuple(map(int, value.split('.'))))
+        if versions[0] > versions[1]: raise ValueError('installed_newer_use_global_skill')
     if host == 'opencode' and config.with_suffix('.jsonc').exists(): raise ValueError('jsonc_requires_official_config_editor')
     before = config.read_bytes() if config.exists() else None
     text = before.decode('utf-8') if before else ''
@@ -188,7 +200,7 @@ def main():
         code=0
     except (OSError, ValueError, UnicodeError) as exc:
         known={'harness_required','unsupported_harness','symlink_config_requires_manual_check','jsonc_requires_official_config_editor',
-               'codex_setup_requires_python_3_11','custom_claude_config_requires_official_cli','invalid_config_root','invalid_mcp_section','server_name_conflict','setup_busy','concurrent_change','readback_failed','missing_release_file','rollback_conflict'}
+               'codex_setup_requires_python_3_11','custom_claude_config_requires_official_cli','invalid_config_root','invalid_mcp_section','server_name_conflict','setup_busy','concurrent_change','readback_failed','missing_release_file','rollback_conflict','installed_newer_use_global_skill','invalid_install_manifest'}
         reason=str(exc) if str(exc) in known else 'invalid_or_unwritable_config'
         result={'configured':False,'reason':reason,'authentication':'not_attempted'};code=2
     if args.report:
